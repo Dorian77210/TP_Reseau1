@@ -16,8 +16,6 @@ import java.util.ArrayList;
 
 public class EchoServerMultiThreaded  {
 	
-	private synchronized List<> clients;
-	
  	/**
   	* main method
 	* @param EchoServer port
