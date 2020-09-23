@@ -1685,32 +1685,6 @@
 							"text": "StreamIn"
 						},
 						{
-							"_type": "UMLTextView",
-							"_id": "AAAAAAF0udEeUwldmhQ=",
-							"_parent": {
-								"$ref": "AAAAAAFF+qBtyKM79qY="
-							},
-							"font": "Arial;13;0",
-							"left": 648,
-							"top": 272,
-							"width": 72.8544921875,
-							"height": 25,
-							"text": "StreamOut"
-						},
-						{
-							"_type": "UMLTextView",
-							"_id": "AAAAAAF0udEr6wnCfSo=",
-							"_parent": {
-								"$ref": "AAAAAAFF+qBtyKM79qY="
-							},
-							"font": "Arial;13;0",
-							"left": 224,
-							"top": 272,
-							"width": 72.8544921875,
-							"height": 25,
-							"text": "StreamOut"
-						},
-						{
 							"_type": "UMLClassView",
 							"_id": "AAAAAAF0udOPtg7ZNSQ=",
 							"_parent": {
@@ -2672,7 +2646,7 @@
 											"top": 71,
 											"width": 286,
 											"height": 13,
-											"text": "ManagerThread"
+											"text": "ClientManager"
 										},
 										{
 											"_type": "LabelView",
@@ -5362,7 +5336,7 @@
 					"_parent": {
 						"$ref": "AAAAAAFF+qBWK6M3Z8Y="
 					},
-					"name": "ManagerThread",
+					"name": "ClientManager",
 					"ownedElements": [
 						{
 							"_type": "UMLAssociation",
