@@ -7,37 +7,56 @@ package multi;
  * Authors:
  */
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ObjectInputStream;
+import java.io.IOException;
 import java.net.*;
 
 public class ClientThread
 	extends Thread {
 	
-	private Socket clientSocket;
+	private Socket socket;
 	
-	ClientThread(Socket s) {
-		this.clientSocket = s;
+	ClientThread(Socket socket){
+		this.socket = socket;
+		GlobalBuffer.getInstance().addSocket(socket);
 	}
 
- 	/**
-  	* receives a request from client then sends an echo to the client
-  	* @param clientSocket the client socket
-  	**/
-	public void run() {
-    	  try {
-    		BufferedReader socIn = null;
-    		socIn = new BufferedReader(
-    			new InputStreamReader(clientSocket.getInputStream()));    
-    		PrintStream socOut = new PrintStream(clientSocket.getOutputStream());
-    		while (true) {
-    		  String line = socIn.readLine();
-    		  socOut.println(line);
-    		}
-    	} catch (Exception e) {
-        	System.err.println("Error in EchoServer:" + e); 
-        }
-       }
-  
-  }
-
-  
+	@Override
+	public void run()
+	{
+		// L'utilisateur commence à chatter
+		
+		ObjectInputStream stream = null;
+		try
+		{
+			stream = new ObjectInputStream(this.socket.getInputStream());
+		} catch(IOException exception)
+		{
+			System.err.println(exception);
+		}
+		
+		boolean loop = true;
+		while (loop)
+		{
+			try
+			{
+				Message message = (Message) stream.readObject();
+				NetworkProtocol protocol = message.getProtocol();
+				if (protocol.equals(NetworkProtocol.LEAVE))
+				{
+					// La socket actuelle est expirée
+					GlobalBuffer.getInstance().addExpiredSocket(socket);
+					loop = false;
+				}  else if(protocol.equals(NetworkProtocol.EXCHANGE_MESSAGE))
+				{
+					// on ajoute le message dans le buffer pour qu'il soit envoyé aux clients
+					GlobalBuffer.getInstance().addMessage(message);
+				}
+			} catch(ClassNotFoundException | IOException exception)
+			{
+				System.err.println(exception);
+			}
+		}
+	}
+}
