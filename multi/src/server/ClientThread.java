@@ -1,16 +1,8 @@
 package server;
 
-/***
- * ClientThread
- * Example of a TCP server
- * Date: 14/12/08
- * Authors:
- */
-
-import java.io.BufferedInputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import java.net.*;
+import java.io.ObjectInputStream;
+import java.net.Socket;
 
 import common.Message;
 import common.NetworkProtocol;
@@ -46,12 +38,13 @@ public class ClientThread
 			try
 			{
 				Message message = (Message) stream.readObject();
-				int protocol = message.getProtocol();
+				NetworkProtocol protocol = message.getProtocol();
 				
 				if (protocol == NetworkProtocol.LEAVE)
 				{
 					// La socket actuelle est expirée
 					GlobalBuffer.getInstance().addExpiredSocket(socket);
+					Thread.sleep(1000);
 					GlobalBuffer.getInstance().addMessage(message);
 					loop = false;
 				}  else if(protocol == NetworkProtocol.EXCHANGE_MESSAGE)
@@ -59,7 +52,7 @@ public class ClientThread
 					// on ajoute le message dans le buffer pour qu'il soit envoyé aux clients
 					GlobalBuffer.getInstance().addMessage(message);
 				}
-			} catch(ClassNotFoundException | IOException exception)
+			} catch(ClassNotFoundException | IOException | InterruptedException exception)
 			{
 				System.err.println(exception);
 			}
