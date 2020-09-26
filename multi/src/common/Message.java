@@ -25,7 +25,10 @@ public class Message implements Serializable {
 	 */
 	private Date date;
 	
-	private NetworkProtocol protocol;
+	/**
+	 * Le protocole associé au message
+	 */
+	private int protocol;
 	
 	// ------------- Constructeurs -------------- //
 	
@@ -34,7 +37,7 @@ public class Message implements Serializable {
 	 * @param message Le contenu du message
 	 * @param protocol Permet de savoir si le message est un message d'échange ou de sortie du chat
 	 */
-	public Message(String message, NetworkProtocol protocol)
+	public Message(String message, int protocol)
 	{
 		this.message = message;
 		this.date = new Date();
@@ -101,7 +104,7 @@ public class Message implements Serializable {
 	 *  Permet de récupérer le protocole du message
 	 * @return Le protocole du message
 	 */
-	public NetworkProtocol getProtocol()
+	public int getProtocol()
 	{
 		return this.protocol;
 	}

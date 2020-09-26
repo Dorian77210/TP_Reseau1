@@ -1,9 +1,9 @@
 package client;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.util.Scanner;
 
 import common.Message;
 import common.NetworkProtocol;
@@ -11,17 +11,17 @@ import common.NetworkProtocol;
 public class MainClientWriterThread extends Thread 
 {
 	/**
-	 * La socket du client
+	 * Le flux de sortie
 	 */
-	private Socket socket;
+	private ObjectOutputStream out;
 	
 	/**
 	 * Constructeur par défaut de MainClientWriterThread
-	 * @param socket La socket du client
+	 * @param out Le flux de sortie 
 	 */
-	public MainClientWriterThread(Socket socket)
+	public MainClientWriterThread(ObjectOutputStream out)
 	{
-		this.socket = socket;
+		this.out = out;
 	}
 	
 	@Override
@@ -29,24 +29,21 @@ public class MainClientWriterThread extends Thread
 	{
 		int choice;
 		boolean loop = true;
-		ObjectOutputStream out = null;
-		
-		try
-		{
-			out = new ObjectOutputStream(this.socket.getOutputStream());
-		} catch(IOException exception)
-		{
-			System.err.println("Une erreur est survenue");
-			return;
-		}
-		
-		
-		Scanner scanner = new Scanner(System.in);
+		BufferedReader scan = null;
+		scan = new BufferedReader(new InputStreamReader(System.in));
 		
 		while (loop)
 		{
 			this.displayChoices();
-			choice = scanner.nextInt();
+			try
+			{
+				choice = Integer.parseInt(scan.readLine());
+			} catch(IOException exception)
+			{
+				System.out.println("Mauvais choix");
+				continue;
+			}
+			
 			String content;
 			Message message = null;
 			
@@ -54,14 +51,18 @@ public class MainClientWriterThread extends Thread
 			{
 				case 1:
 					System.out.println(">");
-					content = scanner.next();
-					message = new Message(content, NetworkProtocol.EXCHANGE_MESSAGE);
+					try
+					{
+						content = scan.readLine();
+						message = new Message(content, NetworkProtocol.EXCHANGE_MESSAGE);
+					} catch(IOException exception)
+					{
+						System.err.println(exception);
+					}
 				break;
 				case 2:
-					content = "Un utilisateur a quitté le chat";
-					message = new Message(content, NetworkProtocol.LEAVE);
-					loop = false;
 					System.out.println("Bye bye");
+					loop = false;
 				break;
 				
 				default:
@@ -74,7 +75,7 @@ public class MainClientWriterThread extends Thread
 				// envoie du message
 				try
 				{
-					out.writeObject(message);
+					this.out.writeObject(message);
 				} catch(IOException exception)
 				{
 					System.out.println("ok");
@@ -84,7 +85,13 @@ public class MainClientWriterThread extends Thread
 			}
 		}
 		
-		scanner.close();
+		try
+		{
+			scan.close();
+		} catch(IOException exception)
+		{
+			System.err.println(exception);
+		}
 	}
 	
 	/**

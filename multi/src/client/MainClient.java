@@ -3,6 +3,10 @@ package client;
 import java.net.Socket;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+
+import common.Message;
+import common.NetworkProtocol;
 
 /**
  * Point d'entrée du client
@@ -19,11 +23,13 @@ public class MainClient {
 	          System.exit(1);
 	    }
 		
+		ObjectOutputStream stream = null;
 		Socket socket = null;
 		
 		try
 		{
 			socket = new Socket(args[0], Integer.parseInt(args[1]));
+			stream = new ObjectOutputStream(socket.getOutputStream());
 		} catch(IOException exception)
 		{
 			System.err.println(exception);
@@ -32,7 +38,7 @@ public class MainClient {
 		
 		// Création des threads
 		Thread listenerThread = new MainClientListenerThread(socket);
-		Thread writerThread = new MainClientWriterThread(socket);
+		Thread writerThread = new MainClientWriterThread(stream);
 		
 		listenerThread.start();
 		writerThread.start();
@@ -40,9 +46,10 @@ public class MainClient {
 		try
 		{
 			writerThread.join();
-			System.out.println("join success");
 			listenerThread.interrupt();
-			System.out.println("interrupt success");
+			
+			Message lastMessage = new Message("Un utilisateur a quitté le chat", NetworkProtocol.LEAVE);
+			stream.writeObject(lastMessage);
 			socket.close();
 		} catch(IOException | InterruptedException exception)
 		{

@@ -1,7 +1,8 @@
 package common;
 
-import java.io.Serializable;
-
-public enum NetworkProtocol implements Serializable {
-	LEAVE, EXCHANGE_MESSAGE, UNDEFINED
+public class NetworkProtocol {
+	
+	public static final int LEAVE = 1;
+	public static final int EXCHANGE_MESSAGE = 2;
+	public static final int UNDEFINED = 3;
 }

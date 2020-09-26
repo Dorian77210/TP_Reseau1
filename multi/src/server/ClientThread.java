@@ -46,13 +46,15 @@ public class ClientThread
 			try
 			{
 				Message message = (Message) stream.readObject();
-				NetworkProtocol protocol = message.getProtocol();
-				if (protocol.equals(NetworkProtocol.LEAVE))
+				int protocol = message.getProtocol();
+				
+				if (protocol == NetworkProtocol.LEAVE)
 				{
 					// La socket actuelle est expirée
 					GlobalBuffer.getInstance().addExpiredSocket(socket);
+					GlobalBuffer.getInstance().addMessage(message);
 					loop = false;
-				}  else if(protocol.equals(NetworkProtocol.EXCHANGE_MESSAGE))
+				}  else if(protocol == NetworkProtocol.EXCHANGE_MESSAGE)
 				{
 					// on ajoute le message dans le buffer pour qu'il soit envoyé aux clients
 					GlobalBuffer.getInstance().addMessage(message);

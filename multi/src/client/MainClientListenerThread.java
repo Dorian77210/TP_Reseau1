@@ -38,7 +38,7 @@ public class MainClientListenerThread extends Thread
 		
 		Message message;
 		
-		while (true)
+		while (!this.isInterrupted())
 		{
 			try
 			{
