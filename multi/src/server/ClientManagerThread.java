@@ -1,6 +1,9 @@
-package multi;
+package server;
 
 import java.util.List;
+
+import common.Message;
+
 import java.util.ArrayList;
 
 import java.io.IOException;
@@ -32,38 +35,45 @@ public class ClientManagerThread extends Thread {
 	public ClientManagerThread()
 	{
 		super();
+		this.sockets = new ArrayList<>();
+		this.history = new ArrayList<>();
 	}
 	
 	@Override
 	public void run()
 	{
-		// close the expired sockets
-		List<Socket> expiredSockets = GlobalBuffer.getInstance().getExpiredSockets();
-		for (Socket expiredSocket : expiredSockets)
+		while (true)
 		{
-			try
+			// close the expired sockets
+			List<Socket> expiredSockets = GlobalBuffer.getInstance().getExpiredSockets();
+			for (Socket expiredSocket : expiredSockets)
 			{
-				expiredSocket.close();	
-			} catch(IOException exception)
-			{
-				System.err.println(exception);
+				try
+				{
+					expiredSocket.close();	
+				} catch(IOException exception)
+				{
+					System.err.println(exception);
+				}
 			}
-		}
-		
-		// send the new messages
-		Message message;
-		while((message = GlobalBuffer.getInstance().nextMessage()) != null)
-		{
-			this.history.add(message);
-			this.send(message);
-		}
-		
-		// accept the new sockets
-		Socket socket;
-		while((socket = GlobalBuffer.getInstance().nextSocket()) != null)
-		{
-			this.sockets.add(socket);
-			this.sendHistory(socket);
+			expiredSockets.clear();
+			
+			// send the new messages
+			Message message;
+			while((message = GlobalBuffer.getInstance().nextMessage()) != null)
+			{
+				this.history.add(message);
+				this.send(message);
+			}
+			
+			// accept the new sockets
+			Socket socket;
+			while((socket = GlobalBuffer.getInstance().nextSocket()) != null)
+			{
+				this.sockets.add(socket);
+				this.sendHistory(socket);
+				System.out.println("New client");
+			}	
 		}
 	}
 	

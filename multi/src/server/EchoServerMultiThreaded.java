@@ -1,18 +1,7 @@
-package multi;
+package server;
 
-/***
- * EchoServer
- * Example of a TCP server
- * Date: 10/01/04
- * Authors:
- */
-
-
-import java.io.*;
-import java.net.*;
-
-import java.util.List;
-import java.util.ArrayList;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class EchoServerMultiThreaded  {
 	
@@ -29,11 +18,13 @@ public class EchoServerMultiThreaded  {
           System.exit(1);
   	}
 	try {
+		Thread manager = new ClientManagerThread();
 		listenSocket = new ServerSocket(Integer.parseInt(args[0])); //port
-		System.out.println("Server ready..."); 
+		System.out.println("Server ready ..."); 
+		manager.start();
 		while (true) {
 			Socket clientSocket = listenSocket.accept();
-			System.out.println("Connexion from:" + clientSocket.getInetAddress());
+			System.out.println("Connexion from : " + clientSocket.getInetAddress());
 			ClientThread ct = new ClientThread(clientSocket);
 			ct.start();
 		}

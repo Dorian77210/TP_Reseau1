@@ -1,16 +1,20 @@
-package multi;
+package common;
+
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.json.JSONObject;
-import java.util.Date;
-import java.text.SimpleDateFormat;
 
 /**
  * Classe qui représente un message entre le serveur et les client
  * @author dorian
  *
  */
-public class Message {
-
+public class Message implements Serializable {
+	
+	private static final long serialVersionUID = 0xCafe;
+	
 	/**
 	 * Contenu du message
 	 */

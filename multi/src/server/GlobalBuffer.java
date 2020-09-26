@@ -1,6 +1,9 @@
-package multi;
+package server;
 
 import java.util.Queue;
+
+import common.Message;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ArrayList;

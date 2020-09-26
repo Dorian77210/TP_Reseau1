@@ -1,4 +1,4 @@
-package multi;
+package server;
 
 /***
  * ClientThread
@@ -12,6 +12,9 @@ import java.io.ObjectInputStream;
 import java.io.IOException;
 import java.net.*;
 
+import common.Message;
+import common.NetworkProtocol;
+
 public class ClientThread
 	extends Thread {
 	
@@ -19,6 +22,7 @@ public class ClientThread
 	
 	ClientThread(Socket socket){
 		this.socket = socket;
+		// join
 		GlobalBuffer.getInstance().addSocket(socket);
 	}
 
