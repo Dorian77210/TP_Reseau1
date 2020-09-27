@@ -1,8 +1,9 @@
 package client;
 
 import java.net.Socket;
-
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 
 import common.Message;
@@ -16,6 +17,10 @@ import common.NetworkProtocol;
 
 public class MainClient {
 	
+	/**
+	 * Main method
+	 * @param args
+	 */
 	public static void main(String[] args)
 	{
 		if (args.length != 2) {
@@ -36,16 +41,68 @@ public class MainClient {
 			System.exit(1);
 		}
 		
-		// Création des threads
+		// Création du thread d'écoute
 		Thread listenerThread = new MainClientListenerThread(socket);
-		Thread writerThread = new MainClientWriterThread(stream);
-		
 		listenerThread.start();
-		writerThread.start();
 		
 		try
 		{
-			writerThread.join();
+			// Message writer
+			
+			int choice;
+			boolean loop = true;
+			BufferedReader scan = null;
+			scan = new BufferedReader(new InputStreamReader(System.in));
+			
+			while (loop)
+			{
+				System.out.println("1 - Ecrire un message");
+				System.out.println("2 - Quitter");
+				
+				try {
+					choice = Integer.parseInt(scan.readLine());
+					
+					String content;
+					Message message = null;
+					
+					switch(choice)
+					{
+						case 1:
+							System.out.print("> ");
+							content = scan.readLine();
+							message = new Message(content, NetworkProtocol.EXCHANGE_MESSAGE);
+						break;
+						
+						case 2:
+							loop = false;
+						break;
+						
+						default:
+							System.out.println("Mauvais choix");
+						break;
+					}
+					
+					if (message != null)
+					{
+						// envoie du message
+						stream.writeObject(message);	
+					}
+				} catch (NumberFormatException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+			try
+			{
+				scan.close();
+			} catch(IOException exception)
+			{
+				System.err.println(exception);
+			}
+			
+			//End of write loop
+			
 			listenerThread.interrupt();
 			
 			Message lastMessage = new Message("Un utilisateur a quitté le chat", NetworkProtocol.LEAVE);

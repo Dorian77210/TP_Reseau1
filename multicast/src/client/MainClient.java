@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Point d'entrée du client
@@ -15,6 +17,10 @@ import java.net.MulticastSocket;
 
 public class MainClient {
 	
+	/**
+	 * Main method
+	 * @param args
+	 */
 	public static void main(String[] args)
 	{
 		if (args.length != 2) {
@@ -112,10 +118,35 @@ public class MainClient {
 		}
 	}
 	
+	/**
+	 * Envoie un message sur la SocketMulticast
+	 * @param message Le message à envoyer
+	 * @param socket La socket du groupe
+	 * @param IPGroup L'IP du groupe
+	 * @param portGroup Le port du groupe
+	 */
 	public static void sendMessage(String message, MulticastSocket socket, InetAddress IPGroup, int portGroup){
 		
 		try {
-			byte[] buffer = message.getBytes(); 
+			
+			StringBuilder mess = new StringBuilder();
+			Date date = new Date();
+	
+			String patternDate = "dd-MM-yyyy";
+			SimpleDateFormat dateFormat = new SimpleDateFormat(patternDate);
+			
+			String patternHour = "HH:mm";
+			SimpleDateFormat hourFormat = new SimpleDateFormat(patternHour);
+
+			mess.append("Received on ");
+			mess.append(dateFormat.format(date));
+			mess.append(" at ");
+			mess.append(hourFormat.format(date));
+			mess.append(" : ");
+			mess.append(message);
+			
+			
+			byte[] buffer = mess.toString().getBytes(); 
 			DatagramPacket datagram = new
 			DatagramPacket(buffer, buffer.length, IPGroup, portGroup); 
 			socket.send(datagram);

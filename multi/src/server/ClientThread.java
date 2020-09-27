@@ -12,6 +12,10 @@ public class ClientThread
 	
 	private Socket socket;
 	
+	/**
+	 * Constructeur d'un ClientThread
+	 * @param socket La socket du ClientThread
+	 */
 	ClientThread(Socket socket){
 		this.socket = socket;
 		// join

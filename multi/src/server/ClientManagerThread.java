@@ -102,7 +102,7 @@ public class ClientManagerThread extends Thread {
 	
 	
 	/**
-	 * Envoie un message à tous les clients
+	 * Envoie un message à tous les clients et socke les messages dans le fichier JSON
 	 * @param message Le message à envoyer
 	 */
 	private void send(Message message)
@@ -156,7 +156,7 @@ public class ClientManagerThread extends Thread {
 	}
 	
 	/**
-	 * Permet de lire l'historique dans un fichier
+	 * Permet de lire l'historique dans un fichier JSON
 	 */
 	private void readHistory()
 	{

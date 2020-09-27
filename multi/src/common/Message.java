@@ -5,7 +5,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Classe qui représente un message entre le serveur et les client
@@ -13,7 +12,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  *
  */
 public class Message implements Serializable {
-
+	/**
+	 * For Serializable
+	 */
 	private static final long serialVersionUID = 1L;
 
 	/**
@@ -31,7 +32,6 @@ public class Message implements Serializable {
 	/**
 	 * Le protocole associé au message
 	 */
-	@JsonIgnore
 	private NetworkProtocol protocol;
 	
 	// ------------- Constructeurs -------------- //
@@ -66,6 +66,10 @@ public class Message implements Serializable {
 		return this.protocol;
 	}
 	
+	/**
+	 * Permet d'afficher correctement un message
+	 * @return Le message correctement formé
+	 */
 	public String toString()
 	{
 		StringBuilder message = new StringBuilder();
