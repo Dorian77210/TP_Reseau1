@@ -50,6 +50,8 @@ public class MainClient {
 			
 			Message lastMessage = new Message("Un utilisateur a quitté le chat", NetworkProtocol.LEAVE);
 			stream.writeObject(lastMessage);
+			
+			Thread.sleep(1000);
 			socket.close();
 		} catch(IOException | InterruptedException exception)
 		{

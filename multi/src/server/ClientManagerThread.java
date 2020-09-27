@@ -1,20 +1,19 @@
 package server;
 
-import java.util.List;
-
-import common.Message;
-
-import java.util.ArrayList;
-
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.PrintStream;
-import java.io.FileWriter;
-
 import java.net.Socket;
-
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import common.Message;
+import common.NetworkProtocol;
 
 /**
  * Classe représentant le thread permettant de gérer les envoies de messages aux clients
@@ -34,11 +33,6 @@ public class ClientManagerThread extends Thread {
 	private List<Message> history;
 	
 	/**
-	 * Flux de sortie pour l'historique
-	 */
-	private FileWriter historyStream;
-	
-	/**
 	 * Nom du fichier de sauvegarde de l'historique
 	 */
 	private static final String HISTORY_FILE = "history.json";
@@ -56,15 +50,6 @@ public class ClientManagerThread extends Thread {
 	@Override
 	public void run()
 	{
-		// initialise le flux de sortie pour l'historique
-		try
-		{
-			this.historyStream = new FileWriter(HISTORY_FILE, true);
-		} catch(IOException exception)
-		{
-			System.err.println("Erreur de l'ouverture du fichier de l'historique");
-			return;
-		}
 		
 		this.readHistory();
 		
@@ -76,8 +61,12 @@ public class ClientManagerThread extends Thread {
 			{
 				try
 				{
+					Message lastClientMessage = new Message("Bye bye", NetworkProtocol.LEAVE);
+					this.sockets.get(expiredSocket).writeObject(lastClientMessage);
+
 					this.sockets.remove(expiredSocket);
-					expiredSocket.close();	
+					expiredSocket.close();
+					System.out.println("Client disconnected");
 				} catch(IOException exception)
 				{
 					System.err.println("Remove socket : " + exception);
@@ -89,7 +78,6 @@ public class ClientManagerThread extends Thread {
 			Message message;
 			while((message = GlobalBuffer.getInstance().nextMessage()) != null)
 			{
-				System.out.println(message);
 				this.history.add(message);
 				this.send(message);
 			}
@@ -106,10 +94,12 @@ public class ClientManagerThread extends Thread {
 					System.err.println(exception);
 				}
 				this.sendHistory(socket);
-				System.out.println("New client");
+				System.out.println("New client connected");
 			}	
 		}
 	}
+	
+	
 	
 	/**
 	 * Envoie un message à tous les clients
@@ -117,14 +107,25 @@ public class ClientManagerThread extends Thread {
 	 */
 	private void send(Message message)
 	{
+		
+		try
+		{
+			// sauvegarde le message dans le fichier
+			File file = new File(HISTORY_FILE);
+			ObjectMapper objectMapper = new ObjectMapper();
+			objectMapper.writeValue(file, history);
+			
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		for (Map.Entry<Socket, ObjectOutputStream> entry : this.sockets.entrySet())
 		{
 			try
 			{
-				System.out.println("Send the message : " + message);
 				entry.getValue().writeObject(message);
-				// sauvegarde le message dans le fichier
-				//this.historyStream.write(message.toJSON().toString(2));
+
 			} catch(IOException exception)
 			{
 				System.err.println(exception);
@@ -159,6 +160,15 @@ public class ClientManagerThread extends Thread {
 	 */
 	private void readHistory()
 	{
+		try {
+			File file = new File(HISTORY_FILE);
+			if(file.exists()) {
+				ObjectMapper objectMapper = new ObjectMapper();
+				history.addAll(Arrays.asList(objectMapper.readValue(file, Message[].class)));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 	}
 }

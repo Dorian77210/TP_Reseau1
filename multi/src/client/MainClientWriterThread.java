@@ -40,7 +40,7 @@ public class MainClientWriterThread extends Thread
 				choice = Integer.parseInt(scan.readLine());
 			} catch(IOException exception)
 			{
-				System.out.println("Mauvais choix");
+				System.out.println("Mauvais choix !");
 				continue;
 			}
 			
@@ -50,7 +50,7 @@ public class MainClientWriterThread extends Thread
 			switch(choice)
 			{
 				case 1:
-					System.out.println(">");
+					System.out.print("> ");
 					try
 					{
 						content = scan.readLine();
@@ -61,10 +61,8 @@ public class MainClientWriterThread extends Thread
 					}
 				break;
 				case 2:
-					System.out.println("Bye bye");
 					loop = false;
 				break;
-				
 				default:
 					System.out.println("Mauvais choix");
 				break;
@@ -78,7 +76,6 @@ public class MainClientWriterThread extends Thread
 					this.out.writeObject(message);
 				} catch(IOException exception)
 				{
-					System.out.println("ok");
 					exception.printStackTrace();
 					System.err.println("Send message : " + exception);
 				}		
