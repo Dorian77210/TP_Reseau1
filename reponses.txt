@@ -1,0 +1,13 @@
+c) Le serveur ne peut pas accepter plusieurs clients car il est bloqué sur le premier (écoute).
+
+e) Spécifications : 
+    - Créer un système de groupe (possibilité de quitter et rejoindre)
+    - Créer un protocole de communication entre le serveur et les clients (via ligne de commande, console)
+        * Chaque client aura un id unique (pseudo)
+        * Cet id permettra au serveur de connaître quel client se connecte, discute, ...
+        * Le protocole sera formé de plusieurs options :
+            - Leave
+            - Exchange
+            - Join
+    - Lorsqu'un message sera envoyé par un client, le serveur transmettra ce message à tous les clients
+        sauf à l'expediteur
