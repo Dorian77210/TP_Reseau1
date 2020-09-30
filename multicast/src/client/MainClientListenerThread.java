@@ -12,15 +12,26 @@ public class MainClientListenerThread extends Thread
 	 */
 	private MulticastSocket socket;
 	
+	/**
+	 * L'IP du groupe
+	 */
 	private InetAddress IPGroup;
 	
+	/**
+	 * Le port du groupe
+	 */
 	private int port;
 	
+	/**
+	 * Longueur maximale d'un message
+	 */
 	private static final int MAX_MSG_LEN = 1000;
 	
 	/**
 	 * Constructeur de la class MainClientListenerThread
 	 * @param socket La socket du client
+	 * @param IPGroup L'IP du groupe
+	 * @param port Le port du groupe
 	 */
 	public MainClientListenerThread(MulticastSocket socket, InetAddress IPGroup, int port)
 	{
