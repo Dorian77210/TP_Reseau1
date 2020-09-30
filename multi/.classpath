@@ -6,8 +6,8 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="//wsl$/Debian/home/terbah/INSA/II/Reseau/TP_Reseau1/libs/jackson-annotations-2.11.2.jar"/>
-	<classpathentry kind="lib" path="//wsl$/Debian/home/terbah/INSA/II/Reseau/TP_Reseau1/libs/jackson-core-2.11.0.wso2v1.jar"/>
-	<classpathentry kind="lib" path="//wsl$/Debian/home/terbah/INSA/II/Reseau/TP_Reseau1/libs/jackson-databind-2.11.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/fanny/Documents/Mes Documents/Professionnel/Scolarité/Cours/INSA/INSA - 2/S1/PR/TP_Reseau1/libs/jackson-annotations-2.11.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/fanny/Documents/Mes Documents/Professionnel/Scolarité/Cours/INSA/INSA - 2/S1/PR/TP_Reseau1/libs/jackson-core-2.11.0.wso2v1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/fanny/Documents/Mes Documents/Professionnel/Scolarité/Cours/INSA/INSA - 2/S1/PR/TP_Reseau1/libs/jackson-databind-2.11.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
