@@ -30,6 +30,7 @@ public class MainClient {
 		
 		ObjectOutputStream stream = null;
 		Socket socket = null;
+		boolean error = false;
 		
 		try
 		{
@@ -61,9 +62,15 @@ public class MainClient {
 				
 				try {
 					choice = Integer.parseInt(scan.readLine());
-					
 					String content;
 					Message message = null;
+					
+					if (!listenerThread.isAlive())
+					{
+						System.out.println("La connexion avec le serveur a été perdue");
+						error = true;
+						break;
+					}
 					
 					switch(choice)
 					{
@@ -101,14 +108,14 @@ public class MainClient {
 				System.err.println(exception);
 			}
 			
-			//End of write loop
-			
-			listenerThread.interrupt();
-			
-			Message lastMessage = new Message("Un utilisateur a quitté le chat", NetworkProtocol.LEAVE);
-			stream.writeObject(lastMessage);
-			
-			Thread.sleep(1000);
+			if (!error)
+			{
+				//End of write loop
+				listenerThread.interrupt();	
+				Message lastMessage = new Message("Un utilisateur a quitté le chat", NetworkProtocol.LEAVE);
+				stream.writeObject(lastMessage);
+				Thread.sleep(1000);
+			}
 			socket.close();
 		} catch(IOException | InterruptedException exception)
 		{

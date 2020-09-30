@@ -44,9 +44,12 @@ public class MainClientListenerThread extends Thread
 			{
 				message = (Message) in.readObject();
 				System.out.println(message);
-			} catch(IOException | ClassNotFoundException exception)
+			} catch(ClassNotFoundException exception)
 			{
 				System.err.println("Main listener : " + exception);
+			} catch(IOException ioe)
+			{
+				break;
 			}
 		}
 	}
