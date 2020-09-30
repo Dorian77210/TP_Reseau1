@@ -51,7 +51,7 @@ public class WebServer {
 				// blank line signals the end of the client HTTP
 				// headers.
 				String str = ".";
-				while (!str.equals(""))
+				while (str != null && !str.equals(""))
 					str = in.readLine();
 
 				// Send the response
