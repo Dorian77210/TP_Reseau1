@@ -1953,6 +1953,24 @@
 											"height": 13,
 											"text": "+addExpiredSocket(socket: Socket)",
 											"horizontalAlignment": 0
+										},
+										{
+											"_type": "UMLOperationView",
+											"_id": "AAAAAAF03a4FC9eUK4g=",
+											"_parent": {
+												"$ref": "AAAAAAF0uh2ZZahxCw4="
+											},
+											"model": {
+												"$ref": "AAAAAAF03a4E5NeRfvE="
+											},
+											"visible": false,
+											"font": "Arial;13;0",
+											"left": 445,
+											"top": 685,
+											"width": 233.41064453125,
+											"height": 13,
+											"text": "+removeSocket(socket: Socket)",
+											"horizontalAlignment": 0
 										}
 									],
 									"font": "Arial;13;0",
@@ -4944,6 +4962,25 @@
 									"_id": "AAAAAAF0wois059Ei8w=",
 									"_parent": {
 										"$ref": "AAAAAAF0woiOeZ8BvF4="
+									},
+									"name": "socket",
+									"type": "Socket"
+								}
+							]
+						},
+						{
+							"_type": "UMLOperation",
+							"_id": "AAAAAAF03a4E5NeRfvE=",
+							"_parent": {
+								"$ref": "AAAAAAF0uh2ZZaho2oo="
+							},
+							"name": "removeSocket",
+							"parameters": [
+								{
+									"_type": "UMLParameter",
+									"_id": "AAAAAAF03a4cx9fUIwo=",
+									"_parent": {
+										"$ref": "AAAAAAF03a4E5NeRfvE="
 									},
 									"name": "socket",
 									"type": "Socket"

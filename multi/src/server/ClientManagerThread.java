@@ -61,11 +61,14 @@ public class ClientManagerThread extends Thread {
 			{
 				try
 				{
-					Message lastClientMessage = new Message("Bye bye", NetworkProtocol.LEAVE);
-					this.sockets.get(expiredSocket).writeObject(lastClientMessage);
-
+					if (!expiredSocket.isClosed())
+					{
+						Message lastClientMessage = new Message("Bye bye", NetworkProtocol.LEAVE);
+						this.sockets.get(expiredSocket).writeObject(lastClientMessage);
+						expiredSocket.close();
+					}
+					
 					this.sockets.remove(expiredSocket);
-					expiredSocket.close();
 					System.out.println("Client disconnected");
 				} catch(IOException exception)
 				{

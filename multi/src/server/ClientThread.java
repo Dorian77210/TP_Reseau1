@@ -3,6 +3,7 @@ package server;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
+import java.net.SocketException;
 
 import common.Message;
 import common.NetworkProtocol;
@@ -52,9 +53,21 @@ public class ClientThread
 					// on ajoute le message dans le buffer pour qu'il soit envoyé aux clients
 					GlobalBuffer.getInstance().addMessage(message);
 				}
-			} catch(ClassNotFoundException | IOException | InterruptedException exception)
+			} catch(ClassNotFoundException | InterruptedException exception)
 			{
 				System.err.println(exception);
+			} catch(IOException ioe)
+			{
+				try
+				{
+					this.socket.close();
+				} catch(IOException e)
+				{
+					// nothing
+				}
+				
+				GlobalBuffer.getInstance().addExpiredSocket(this.socket);
+				break;
 			}
 		}
 	}
