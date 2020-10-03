@@ -1,0 +1,1 @@
+e) Lorsqu'on demande une ressource qui existe, elle est effectivement renvoyée au client. Sinon, un message d'erreur est renvoyé

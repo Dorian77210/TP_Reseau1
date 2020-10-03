@@ -8,6 +8,10 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
+
 /**
  * Example program from Chapter 1 Programming Spiders, Bots and Aggregators in
  * Java Copyright 2001 by Jeff Heaton
@@ -50,25 +54,129 @@ public class WebServer {
 				// stop reading once a blank line is hit. This
 				// blank line signals the end of the client HTTP
 				// headers.
+				
+				StringBuilder builder = new StringBuilder();
 				String str = ".";
-				while (str != null && !str.equals(""))
+				
+				int requestSize = Integer.MIN_VALUE;
+				int currentSize = 0;
+				String contentLenghtHeader = "Content-Length:";
+				boolean inHeaders = true;
+				
+				while (str != null && currentSize != requestSize)
+				{
 					str = in.readLine();
+					builder.append(str);
+					System.out.println(str);
+					if (str != null)
+					{
+						if (!inHeaders)
+						{
+							currentSize += (str.getBytes("UTF-8").length);
+							System.out.println(currentSize);
+							System.out.println("request size = " + requestSize);
+						}
+						
+						if (str.equals(""))
+						{		
+							if (!inHeaders)
+							{
+								currentSize++;
+							}
+							inHeaders = false;
+						}
+						if (str.contains(contentLenghtHeader))
+						{
+							requestSize = Integer.parseInt(str.substring(contentLenghtHeader.length() + 1));
+						}
+					}
+				}
+				
+				String rawPayload = builder.toString();
+				if (rawPayload != null && !rawPayload.equals("") && !rawPayload.equals("null"))
+				{
+					String[] payload = rawPayload.split(" ");
+					System.out.println(Arrays.toString(payload));
+					
+					
+					// construction de la requete
+					HTTPRequest request;
+					
+					HTTPRequest.HTTPProtocol protocol = HTTPRequest.HTTPProtocol.valueOf(payload[0]);
+					String resource = payload[1].substring(1);
+					
+					Map<String, String> params = new HashMap<>();
+					
+					request = new HTTPRequest(protocol, resource, params);
+					
+					if (protocol.equals(HTTPRequest.HTTPProtocol.GET))
+					{
+						this.handleGET(request, out);
+					} else if (protocol.equals(HTTPRequest.HTTPProtocol.POST))
+					{
+						this.handlePOST(request, out);
+					}
+				}
 
-				// Send the response
-				// Send the headers
-				out.println("HTTP/1.0 200 OK");
-				out.println("Content-Type: text/html");
-				out.println("Server: Bot");
-				// this blank line signals the end of the headers
-				out.println("");
-				// Send the HTML page
-				out.println("<H1>Welcome to the Ultra Mini-WebServer</H2>");
-				out.flush();
 				remote.close();
 			} catch (Exception e) {
 				System.out.println("Error: " + e);
 			}
 		}
+	}
+	
+	/**
+	 * Permet de recevoir une requete get
+	 * @param request La requete associée
+	 * @param out Le flux de sortie
+	 */
+	public void handleGET(HTTPRequest request, PrintWriter out)
+	{
+		System.out.println("Receive GET Request");
+		out.println(request);
+		out.flush();
+	}
+	
+	/**
+	 * Permet de recevoir une requete post
+	 * @param request La requete associée
+	 * @param out Le flux de sortie
+	 */
+	public void handlePOST(HTTPRequest request, PrintWriter out)
+	{
+		System.out.println("Receive POST Request");
+		out.println(request);
+		out.flush();
+	}
+	
+	/**
+	 * Permet de recevoir une requete delete
+	 * @param request La requete associée
+	 * @param out Le flux de sortie
+	 */
+	public void handleDELETE(HTTPRequest request, PrintWriter out)
+	{
+		
+	}
+	
+	/**
+	 * Permet de recevoir une requete head
+	 * @param request La requete associée
+	 * @param out Le flux de sortie
+	 */
+	public void handleHEAD(HTTPRequest request, PrintWriter out)
+	{
+		
+	}
+	
+	/**
+	 * Permet de recevoir une requete put
+	 * @param request La requete associée
+	 * @param out Le flux de sortie
+	 */
+	public void handlePUT(HTTPRequest request, PrintWriter out)
+	{
+		
 	}
 
 	/**
