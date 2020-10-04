@@ -10,6 +10,10 @@ import java.net.Socket;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import http.server.HTTPRequest.HTTPProtocol;
+
 import java.util.HashMap;
 
 /**
@@ -58,40 +62,57 @@ public class WebServer {
 				StringBuilder builder = new StringBuilder();
 				String str = ".";
 				
-				int requestSize = Integer.MIN_VALUE;
-				int currentSize = 0;
-				String contentLenghtHeader = "Content-Length:";
+				String boundaryHeader = "boundary=";
+				String boundaryValue = null;
 				boolean inHeaders = true;
+				int cptLine = 0;
+				HTTPRequest.HTTPProtocol protocol = null;
+				boolean loop = true;
 				
-				while (str != null && currentSize != requestSize)
+
+				while (loop)
 				{
 					str = in.readLine();
 					builder.append(str);
 					System.out.println(str);
 					if (str != null)
 					{
+						if(cptLine == 0) {
+							String[] firstLine = str.split(" ");
+							protocol = HTTPRequest.HTTPProtocol.valueOf(firstLine[0]);
+						}
+						
 						if (!inHeaders)
 						{
-							currentSize += (str.getBytes("UTF-8").length);
-							System.out.println(currentSize);
-							System.out.println("request size = " + requestSize);
+							if(str.endsWith(boundaryValue+"--"))
+							{
+								break;
+							}
 						}
 						
 						if (str.equals(""))
 						{		
-							if (!inHeaders)
-							{
-								currentSize++;
-							}
 							inHeaders = false;
 						}
-						if (str.contains(contentLenghtHeader))
+						if (str.contains(boundaryHeader))
 						{
-							requestSize = Integer.parseInt(str.substring(contentLenghtHeader.length() + 1));
+							int index = str.indexOf(boundaryHeader);
+							boundaryValue = str.substring(index + boundaryHeader.length() + 1);
 						}
+					}
+					cptLine++;
+					if(protocol != null && HTTPProtocol.hasBody(protocol))
+					{
+						loop = str != null;
+					}
+					else
+					{
+						loop = str != null && !str.equals("");
 					}
 				}
 				
+				
+				//Traitement de la requête
 				String rawPayload = builder.toString();
 				if (rawPayload != null && !rawPayload.equals("") && !rawPayload.equals("null"))
 				{
@@ -101,20 +122,92 @@ public class WebServer {
 					
 					// construction de la requete
 					HTTPRequest request;
+					Map<String, String> params = new HashMap<>();
 					
-					HTTPRequest.HTTPProtocol protocol = HTTPRequest.HTTPProtocol.valueOf(payload[0]);
 					String resource = payload[1].substring(1);
 					
-					Map<String, String> params = new HashMap<>();
+					//Prise en compte des paramètres
+					if(resource.contains("?"))
+					{
+						int index = resource.indexOf("?");
+						
+						String paramList = resource.substring(index + 1);
+						
+						resource = resource.substring(0,index);
+						
+						for (String param : paramList.split("&")) {
+							String[] parameter = param.split("=");
+							params.put(parameter[0], parameter[1]);
+						}
+					}
+
+					//Paramètres du body
+					String paramLineBeginWith = "name=\"";
+					for (String element : payload) {
+						if(element.startsWith(paramLineBeginWith)) {
+							
+							String key;
+							String value;
+							
+							String param = "";
+							param = element.substring(paramLineBeginWith.length());
+							
+							int indexEndKey = param.indexOf("\"");
+							key = param.substring(0, indexEndKey);
+							
+							int indexEndValue = param.indexOf("---" + boundaryValue);
+							
+							value = param.substring(indexEndKey+1, indexEndValue); 
+							
+							params.put(key, value);
+						}
+					}
+					
+					for (Entry<String, String> param : params.entrySet()) {
+						System.out.println(param.getKey() + " : " + param.getValue());
+					}
+					
+					
+					
+					
 					
 					request = new HTTPRequest(protocol, resource, params);
 					
+					// Appel de la bonne méthode
 					if (protocol.equals(HTTPRequest.HTTPProtocol.GET))
 					{
 						this.handleGET(request, out);
 					} else if (protocol.equals(HTTPRequest.HTTPProtocol.POST))
 					{
 						this.handlePOST(request, out);
+					}
+					else if (protocol.equals(HTTPRequest.HTTPProtocol.DELETE))
+					{
+						this.handleDELETE(request, out);
+					}
+					else if (protocol.equals(HTTPRequest.HTTPProtocol.PUT))
+					{
+						this.handlePUT(request, out);
+					}
+					else if (protocol.equals(HTTPRequest.HTTPProtocol.PATCH))
+					{
+						this.handlePATCH(request, out);
+					}
+					else if (protocol.equals(HTTPRequest.HTTPProtocol.HEAD))
+					{
+						this.handleHEAD(request, out);
+					}
+					else if (protocol.equals(HTTPRequest.HTTPProtocol.CONNECT))
+					{
+						this.handleCONNECT(request, out);
+					}
+					else if (protocol.equals(HTTPRequest.HTTPProtocol.OPTIONS))
+					{
+						this.handleOPTIONS(request, out);
+					}
+					else if (protocol.equals(HTTPRequest.HTTPProtocol.TRACE))
+					{
+						this.handleTRACE(request, out);
 					}
 				}
 
@@ -156,7 +249,9 @@ public class WebServer {
 	 */
 	public void handleDELETE(HTTPRequest request, PrintWriter out)
 	{
-		
+		System.out.println("Receive DELETE Request");
+		out.println(request);
+		out.flush();
 	}
 	
 	/**
@@ -166,7 +261,9 @@ public class WebServer {
 	 */
 	public void handleHEAD(HTTPRequest request, PrintWriter out)
 	{
-		
+		System.out.println("Receive HEAD Request");
+		out.println(request);
+		out.flush();
 	}
 	
 	/**
@@ -176,8 +273,60 @@ public class WebServer {
 	 */
 	public void handlePUT(HTTPRequest request, PrintWriter out)
 	{
-		
+		System.out.println("Receive PUT Request");
+		out.println(request);
+		out.flush();
 	}
+	
+	/**
+	 * Permet de recevoir une requete patch
+	 * @param request La requete associée
+	 * @param out Le flux de sortie
+	 */
+	public void handlePATCH(HTTPRequest request, PrintWriter out)
+	{
+		System.out.println("Receive PATCH Request");
+		out.println(request);
+		out.flush();
+	}
+	
+	/**
+	 * Permet de recevoir une requete patch
+	 * @param request La requete associée
+	 * @param out Le flux de sortie
+	 */
+	public void handleCONNECT(HTTPRequest request, PrintWriter out)
+	{
+		System.out.println("Receive CONNECT Request");
+		out.println(request);
+		out.flush();
+	}
+
+	
+	/**
+	 * Permet de recevoir une requete patch
+	 * @param request La requete associée
+	 * @param out Le flux de sortie
+	 */
+	public void handleOPTIONS(HTTPRequest request, PrintWriter out)
+	{
+		System.out.println("Receive OPTIONS Request");
+		out.println(request);
+		out.flush();
+	}
+
+	/**
+	 * Permet de recevoir une requete patch
+	 * @param request La requete associée
+	 * @param out Le flux de sortie
+	 */
+	public void handleTRACE(HTTPRequest request, PrintWriter out)
+	{
+		System.out.println("Receive TRACE Request");
+		out.println(request);
+		out.flush();
+	}
+
 
 	/**
 	 * Start the application.

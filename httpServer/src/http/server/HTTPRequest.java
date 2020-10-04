@@ -35,7 +35,14 @@ public class HTTPRequest {
 	
 	public static enum HTTPProtocol
 	{
-		GET, POST, DELETE, PUT, HEAD, PATCH, OPTIONS, TRACE, CONNECT
+		GET, POST, DELETE, PUT, HEAD, PATCH, OPTIONS, TRACE, CONNECT;
+		
+		public static boolean hasBody(HTTPProtocol protocol){
+			if(protocol.equals(POST) || protocol.equals(PATCH) || protocol.equals(DELETE) || protocol.equals(PUT)) {
+				return true;
+			}
+			return false;
+		}
 	}
 	
 	/**
@@ -65,6 +72,10 @@ public class HTTPRequest {
 		if (this.protocol.equals(HTTPProtocol.GET))
 		{
 			this.loadGetFile();
+		}
+		else
+		{
+			this.data = "Requête bien reçue.";
 		}
 	}
 	
