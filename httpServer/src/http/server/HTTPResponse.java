@@ -2,6 +2,7 @@ package http.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Classe représentant la réponse d'une requête HTTP
@@ -19,11 +20,6 @@ public class HTTPResponse {
 	 * Version HTTP associée à la reponse
 	 */
 	private String httpVersion;
-	
-	/**
-	 * Body associé à la réponse si elle en a un
-	 */
-	private String body;
 	
 	/**
 	 * Le type de la reponse
@@ -57,7 +53,6 @@ public class HTTPResponse {
 	public HTTPResponse(HTTPRequest request)
 	{
 		this.httpVersion = request.getHTTPVersion();
-		this.body = "";
 		this.contentType = "";
 		this.protocol = request.getProtocol();
 		this.contentLength = 0;
@@ -70,15 +65,6 @@ public class HTTPResponse {
 	public void setReturnCode(HTTPCode code)
 	{
 		this.returnCode = code;
-	}
-	
-	/**
-	 * Mets à jour le body
-	 * @param body Le nouveau body de la réponse
-	 */
-	public void setBody(String body)
-	{
-		this.body = body;
 	}
 	
 	/**
@@ -99,14 +85,18 @@ public class HTTPResponse {
 		this.contentLength = length;
 	}
 	
-	@Override
-	public String toString()
+	/**
+	 * Permet d'envoyer la réponse
+	 * @param out Le flux de sortie
+	 * @param data Les données associées
+	 * @throws IOException Si il y a une erreur au niveau de l'écriture
+	 */
+	public void send(OutputStream out, byte[] data) throws IOException
 	{
 		StringBuilder builder = new StringBuilder();
 		
 		// headers
 		builder.append(String.format("%s %s OK\n", this.httpVersion, this.returnCode.code));
-		// A revoir
 		builder.append(String.format("Content-Type: %s \n", this.contentType));
 		builder.append("Server: Bot\n");
 		
@@ -119,8 +109,12 @@ public class HTTPResponse {
 		builder.append("\r\n");
 		
 		// contenu
-		builder.append(this.body);
+		out.write(builder.toString().getBytes());
+		if (data != null)
+		{
+			out.write(data);
+		}
 		
-		return builder.toString();
+		out.flush();
 	}
 }

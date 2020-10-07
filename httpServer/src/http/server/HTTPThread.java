@@ -5,14 +5,15 @@ import java.io.File;
 import java.nio.file.Files;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.OutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
 import java.util.List;
 import java.util.ArrayList;
-
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 /**
@@ -42,7 +43,7 @@ public class HTTPThread extends Thread {
 		try
 		{
 			BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-			PrintWriter out = new PrintWriter(this.socket.getOutputStream());
+			OutputStream out = this.socket.getOutputStream();
 	
 			// read the data sent. We basically ignore it,
 			// stop reading once a blank line is hit. This
@@ -53,6 +54,7 @@ public class HTTPThread extends Thread {
 			List<String> rawHeaders = new ArrayList<>();
 			StringBuilder bodyBuilder = new StringBuilder();
 			int contentLength = Integer.MIN_VALUE;
+			boolean isDynamicResource = false;
 	
 			// recuperation du protocol
 			String protocolLine = in.readLine();
@@ -85,18 +87,20 @@ public class HTTPThread extends Thread {
 			}
 			
 			// lecture du body
-			char[] buffer = new char[contentLength];
-			try
+			if (contentLength != Integer.MIN_VALUE)
 			{
-				int readBytes = in.read(buffer, 0, contentLength);
-				String rawBody = new String(buffer);
-				bodyBuilder.append(rawBody);
-			} catch(IOException e)
-			{
-				System.err.println(e);
+				char[] buffer = new char[contentLength];
+				try
+				{
+					int readBytes = in.read(buffer, 0, contentLength);
+					String rawBody = new String(buffer);
+					bodyBuilder.append(rawBody);
+				} catch(IOException e)
+				{
+					System.err.println(e);
+				}
 			}
-			
-			
+				
 			//Traitement de la requête
 			if (!rawHeaders.isEmpty())
 			{	
@@ -111,6 +115,7 @@ public class HTTPThread extends Thread {
 				String[] elements = protocolLine.split(" ");
 				
 				String resource = elements[1].substring(1);
+				isDynamicResource = resource.startsWith("dynamic/");
 				String httpVersion = elements[2];
 				
 				//Prise en compte des paramètres de l'url
@@ -140,43 +145,50 @@ public class HTTPThread extends Thread {
 				}	
 				
 				request = new HTTPRequest(protocol, resource, httpVersion, bodyBuilder.toString(), params, headers);
-				
 				HTTPResponse response = new HTTPResponse(request);
-				// Appel de la bonne méthode
-				if (protocol.equals(HTTPProtocol.GET))
+				
+				
+				if (isDynamicResource)
 				{
-					this.handleGET(request, response, out);
-				} else if (protocol.equals(HTTPProtocol.POST))
+				 	this.executeResource(request, response, out);
+				} else
 				{
-					this.handlePOST(request, response, out);
-				}
-				else if (protocol.equals(HTTPProtocol.DELETE))
-				{
-					this.handleDELETE(request, response, out);
-				}
-				else if (protocol.equals(HTTPProtocol.PUT))
-				{
-					this.handlePUT(request, response, out);
-				}
-				else if (protocol.equals(HTTPProtocol.PATCH))
-				{
-					this.handlePATCH(request, response, out);
-				}
-				else if (protocol.equals(HTTPProtocol.HEAD))
-				{
-					this.handleHEAD(request, response, out);
-				}
-				else if (protocol.equals(HTTPProtocol.CONNECT))
-				{
-					this.handleCONNECT(request, response, out);
-				}
-				else if (protocol.equals(HTTPProtocol.OPTIONS))
-				{
-					this.handleOPTIONS(request, response, out);
-				}
-				else if (protocol.equals(HTTPProtocol.TRACE))
-				{
-					this.handleTRACE(request, response, out);
+					// Appel de la bonne méthode
+					if (protocol.equals(HTTPProtocol.GET))
+					{
+						this.handleGET(request, response, out);
+					} else if (protocol.equals(HTTPProtocol.POST))
+					{
+						this.handlePOST(request, response, out);
+					}
+					else if (protocol.equals(HTTPProtocol.DELETE))
+					{
+						this.handleDELETE(request, response, out);
+					}
+					else if (protocol.equals(HTTPProtocol.PUT))
+					{
+						this.handlePUT(request, response, out);
+					}
+					else if (protocol.equals(HTTPProtocol.PATCH))
+					{
+						this.handlePATCH(request, response, out);
+					}
+					else if (protocol.equals(HTTPProtocol.HEAD))
+					{
+						this.handleHEAD(request, response, out);
+					}
+					else if (protocol.equals(HTTPProtocol.CONNECT))
+					{
+						this.handleCONNECT(request, response, out);
+					}
+					else if (protocol.equals(HTTPProtocol.OPTIONS))
+					{
+						this.handleOPTIONS(request, response, out);
+					}
+					else if (protocol.equals(HTTPProtocol.TRACE))
+					{
+						this.handleTRACE(request, response, out);
+					}	
 				}
 			}	
 		} catch(IOException exception)
@@ -195,24 +207,108 @@ public class HTTPThread extends Thread {
 	}
 	
 	/**
+	 * Permets d'executer une ressource
+	 * @param request La requete
+	 * @param response La reponse associée à la requete
+	 * @param out Le flux de sortie
+	 */
+	private void executeResource(HTTPRequest request, HTTPResponse response, OutputStream out)
+	{
+		System.out.println("Execute dynamic resource");
+		String resource = request.getResource();
+		StringBuilder builder = new StringBuilder();
+		
+		// on check si la ressource demandée existe
+		File resourceFile = new File(resource);
+		if (resourceFile.exists())
+		{
+			// creation des arguments
+			String header =  "";
+			String params = "";
+			String body = request.body;
+			String protocol = request.getProtocol().toString();
+			
+			// header
+			for (Map.Entry<String, String> entry : request.headers.entrySet())
+			{
+				header += (entry.getKey() + ": " + entry.getValue());
+				header += "/n";
+			}
+			
+			for (Map.Entry<String, String> entry : request.urlParams.entrySet())
+			{
+				params += (entry.getKey() + "=" + entry.getValue());
+			}
+			
+			try 
+			{
+				String[] cmd = new String[] {
+						"python3",
+						resource,
+						header,
+						params,
+						protocol,
+						body
+				};
+				
+				System.out.println(resource);
+				
+				Process p = Runtime.getRuntime().exec(cmd);
+				
+				BufferedReader stdInput = new BufferedReader(new 
+		                 InputStreamReader(p.getInputStream()));
+				
+				builder = new StringBuilder();
+				String s;
+				
+				 while ((s = stdInput.readLine()) != null) {
+					 builder.append(s);
+		         }
+				 
+				 String returnBody = builder.toString();
+				 System.out.println("Body : " + returnBody);
+				 response.setContentType("text/plain");
+				 response.setContentLength(returnBody.length());
+				 response.setReturnCode(HTTPCode.SUCCESS);
+				 
+			} catch(IOException exception)
+			{
+				System.err.println(exception);
+			}
+		} else
+		{
+			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
+		}
+		
+		try
+		{
+			response.send(out, builder.toString().getBytes());	
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}	
+	}
+	
+	/**
 	 * Permet de recevoir une requete get
 	 * @param request La requete associée
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
 	 */
-	private void handleGET(HTTPRequest request, HTTPResponse response, PrintWriter out)
+	private void handleGET(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive GET Request");
 		String resource = request.getResource();
 		
 		// on check si la ressource demandée existe
 		File resourceFile = new File(resource);
+		byte[] data = null;
+		
 		if (resourceFile.exists())
 		{
 			try
 			{
-				String body = Resource.loadResource(resource);
-				response.setBody(body);
+				data = Resource.loadResource(resource);
 				response.setReturnCode(HTTPCode.SUCCESS);
 				String contentType = Files.probeContentType(resourceFile.toPath());
 				response.setContentType(contentType);
@@ -225,8 +321,13 @@ public class HTTPThread extends Thread {
 			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
 		}
 		
-		out.println(response);
-		out.flush();
+		try
+		{
+			response.send(out, data);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
 	}
 	
 	/**
@@ -235,29 +336,33 @@ public class HTTPThread extends Thread {
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
 	 */
-	private void handlePOST(HTTPRequest request, HTTPResponse response, PrintWriter out)
+	private void handlePOST(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive POST Request");
 		String resource = request.getResource();
-		String body = "";
+		byte[] data = null;
 		
 		try
 		{
 			Resource.appendData(resource, request.getBody());
-			body = "{\"success\": \"true\"}";
-			response.setBody(body);
+			data = "{\"success\": \"true\"}".getBytes();
 			response.setReturnCode(HTTPCode.SUCCESS);
 			response.setContentType("application/json");
 		} catch(IOException exception)
 		{
 			response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
-			response.setBody("{\"success\": \"false\"}");
+			data = "{\"success\": \"false\"}".getBytes();
 		}
 		
-		response.setContentLength(body.length());
+		response.setContentLength(data.length);
 		
-		out.println(response);
-		out.flush();
+		try
+		{
+			response.send(out, data);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
 	}
 	
 	/**
@@ -266,30 +371,31 @@ public class HTTPThread extends Thread {
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
 	 */
-	private void handleDELETE(HTTPRequest request, HTTPResponse response, PrintWriter out)
+	private void handleDELETE(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive DELETE Request");
 		String resource = request.getResource();
-		String body = "";
+		byte[] data = null;
 		
 		try
 		{
 			Resource.deleteFile(resource);
-			body = "{\"success\": \"true\"}";
-			response.setBody(body);
+			data = "{\"success\": \"true\"}".getBytes();
 			response.setReturnCode(HTTPCode.SUCCESS);
 			response.setContentType("application/json");
-			response.setContentLength(body.length());
+			response.setContentLength(data.length);
 		} catch(IOException exception)
 		{
 			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
-			response.setBody(body);
 		}
-		
-		response.setContentLength(body.length());
-		
-		out.println(response);
-		out.flush();
+				
+		try
+		{
+			response.send(out, data);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
 	}
 	
 	/**
@@ -298,11 +404,11 @@ public class HTTPThread extends Thread {
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
 	 */
-	private void handleHEAD(HTTPRequest request, HTTPResponse response, PrintWriter out)
+	private void handleHEAD(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive HEAD Request");
 		String resource = request.getResource();
-		String body = "";
+		byte[] data = null;
 		
 		// on check si la ressource demandée existe
 		File resourceFile = new File(resource);
@@ -310,7 +416,7 @@ public class HTTPThread extends Thread {
 		{
 			try
 			{
-				body = Resource.loadResource(resource);
+				data = Resource.loadResource(resource);
 				response.setReturnCode(HTTPCode.SUCCESS);
 				String contentType = Files.probeContentType(resourceFile.toPath());
 				response.setContentType(contentType);
@@ -323,10 +429,15 @@ public class HTTPThread extends Thread {
 			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
 		}
 		
-		response.setContentLength(body.length());
+		response.setContentLength(data.length);
 		
-		out.println(response);
-		out.flush();
+		try
+		{
+			response.send(out, data);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
 	}
 	
 	/**
@@ -335,29 +446,33 @@ public class HTTPThread extends Thread {
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
 	 */
-	private void handlePUT(HTTPRequest request, HTTPResponse response, PrintWriter out)
+	private void handlePUT(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive PUT Request");
 		String resource = request.getResource();
-		String body = "";
+		byte[] data = null;
 		
 		try
 		{
 			Resource.replaceData(resource, request.getBody());
-			body = "{\"success\": \"true\"}";
-			response.setBody(body);
+			data = "{\"success\": \"true\"}".getBytes();
 			response.setReturnCode(HTTPCode.SUCCESS);
 			response.setContentType("application/json");
 		} catch(IOException exception)
 		{
 			response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
-			response.setBody("{\"success\": \"false\"}");
+			data = "{\"success\": \"false\"}".getBytes();
 		}
 		
-		response.setContentLength(body.length());
+		response.setContentLength(data.length);
 		
-		out.println(response);
-		out.flush();
+		try
+		{
+			response.send(out, data);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
 	}
 	
 	/**
@@ -366,11 +481,9 @@ public class HTTPThread extends Thread {
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
 	 */
-	private void handlePATCH(HTTPRequest request, HTTPResponse response, PrintWriter out)
+	private void handlePATCH(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive PATCH Request");
-		out.println(response);
-		out.flush();
 	}
 	
 	/**
@@ -379,11 +492,9 @@ public class HTTPThread extends Thread {
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
 	 */
-	private void handleCONNECT(HTTPRequest request, HTTPResponse response, PrintWriter out)
+	private void handleCONNECT(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive CONNECT Request");
-		out.println(response);
-		out.flush();
 	}
 
 	
@@ -393,11 +504,9 @@ public class HTTPThread extends Thread {
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
 	 */
-	private void handleOPTIONS(HTTPRequest request, HTTPResponse response, PrintWriter out)
+	private void handleOPTIONS(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive OPTIONS Request");
-		out.println(response);
-		out.flush();
 	}
 
 	/**
@@ -406,10 +515,8 @@ public class HTTPThread extends Thread {
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
 	 */
-	private void handleTRACE(HTTPRequest request, HTTPResponse response, PrintWriter out)
+	private void handleTRACE(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive TRACE Request");
-		out.println(response);
-		out.flush();
 	}
 }

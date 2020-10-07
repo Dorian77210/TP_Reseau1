@@ -4,9 +4,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
 
 /**
  * 
@@ -14,7 +17,7 @@ import java.io.FileOutputStream;
  *
  */
 public class Resource {
-	
+
 	public Resource() { }
 	
 	/**
@@ -23,10 +26,9 @@ public class Resource {
 	 * @return Les données associées à la ressource
 	 * @throws IOException Lorsqu'il y a eu un problème au niveau de la lecture
 	 */
-	public static String loadResource(String resource) throws IOException
+	public static byte[] loadResource(String resource) throws IOException
 	{
-		String data = new String(Files.readAllBytes(Paths.get(resource)));
-		return data;
+		return Files.readAllBytes(Paths.get(resource));
 	}
 	
 	/**
