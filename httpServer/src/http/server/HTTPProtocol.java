@@ -15,4 +15,14 @@ public enum HTTPProtocol
 		}
 		return false;
 	}
+	
+	public static boolean hasResponseBody(HTTPProtocol protocol)
+	{
+		if(protocol.equals(POST) || protocol.equals(PATCH) || protocol.equals(DELETE) || protocol.equals(PUT) || protocol.equals(HEAD))
+		{
+			return true;
+		}
+		
+		return false;
+	}
 }

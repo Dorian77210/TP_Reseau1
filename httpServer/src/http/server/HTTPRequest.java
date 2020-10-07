@@ -19,9 +19,14 @@ public class HTTPRequest {
 	private String resource;
 	
 	/**
-	 * Paramètres de la requête
+	 * Body de la requête
 	 */
-	private Map<String, String> parameters;
+	public final String body;
+	
+	/**
+	 * Parametres de l'url
+	 */
+	public final Map<String, String> urlParams;
 	
 	/**
 	 * La version HTTP associée à le requête
@@ -29,17 +34,32 @@ public class HTTPRequest {
 	private String httpVersion;
 	
 	/**
+	 * La liste des headers
+	 */
+	public final Map<String, String> headers;
+	
+	/**
 	 * Constructeur de la classe HTTPProtocol
 	 * @param protocol Le protocole de la requete
 	 * @param resource La ressource associée à la requete
-	 * @param parameters Les parameters de la requete
+	 * @param body Le body de la requête
+	 * @param urlParams Les parameters de l'url
+	 * @param headers Les headers de la requête
 	 */
-	public HTTPRequest(HTTPProtocol protocol, String resource, String httpVersion, Map<String, String> parameters)
+	public HTTPRequest(HTTPProtocol protocol, 
+			String resource, 
+			String httpVersion, 
+			String body, 
+			Map<String, String> urlParams, 
+			Map<String, String> headers)
 	{
 		this.protocol = protocol;
 		this.resource = resource;
-		this.parameters = parameters;
+		this.body = body;
+		this.urlParams = urlParams;
 		this.httpVersion = httpVersion;
+		this.headers = headers;
+		this.resource = "./src/http/server/resource/" + (resource.equals("") ? "index.html" : resource);
 	}
 	
 	
@@ -71,11 +91,11 @@ public class HTTPRequest {
 	}
 	
 	/**
-	 * Permet de récupérer les paramètres de la requête
-	 * @return Les paramètres
+	 * Permets de récupérer le body de la requête
+	 * @return Le body
 	 */
-	public Map<String, String> getParameters()
+	public String getBody()
 	{
-		return this.parameters;
+		return this.body;
 	}
 }

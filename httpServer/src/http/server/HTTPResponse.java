@@ -11,14 +11,9 @@ import java.io.IOException;
 public class HTTPResponse {
 
 	/**
-	 * Le code de retour de la requete
+	 * Code de retour pour la reponse
 	 */
-	private int returnCode;
-	
-	/**
-	 * Description associée au code de retour
-	 */
-	private String reasonPhrase;
+	HTTPCode returnCode;
 	
 	/**
 	 * Version HTTP associée à la reponse
@@ -26,9 +21,24 @@ public class HTTPResponse {
 	private String httpVersion;
 	
 	/**
-	 * Les données associées à la ressource
+	 * Body associé à la réponse si elle en a un
 	 */
-	private String data;
+	private String body;
+	
+	/**
+	 * Le type de la reponse
+	 */
+	private String contentType;
+	
+	/**
+	 * Taille du body 
+	 */
+	private int contentLength;
+	
+	/**
+	 * Protocole utilisée par la réponse 
+	 */
+	private HTTPProtocol protocol;
 	
 	/**
 	 * Erreur par défaut renvoyée au client si la ressource demandée n'existe pas
@@ -36,57 +46,57 @@ public class HTTPResponse {
 	private static final String DEFAULT_RESOURCE_ERROR = "La ressource demandée n'existe pas";
 	
 	/**
-	 * Page HTML par défaut
-	 */
-	private static final String DEFAULT_RESOURCE = "index.html";
-	
-	/**
 	 * Erreur renvoyée si une ressource n'a pas été chargée correctement
 	 */
 	private static final String RESOURCE_LOADING_ERROR = "La ressource demandée n'a pas pu être chargée correctement";
-
+	
+	/**
+	 * Constructeur de la classe HTTPResponse
+	 * @param request La requête qui initie la réponse
+	 */
 	public HTTPResponse(HTTPRequest request)
 	{
 		this.httpVersion = request.getHTTPVersion();
-		
-		
-		if (request.getProtocol().equals(HTTPProtocol.GET))
-		{
-			this.loadGetFile(request.getResource());
-		}
-		else
-		{
-			this.data = "Requête bien reçue.";
-		}
+		this.body = "";
+		this.contentType = "";
+		this.protocol = request.getProtocol();
+		this.contentLength = 0;
 	}
 	
 	/**
-	 * Permet de charger une ressource
-	 * @param resource La ressource associée
+	 * Met à jour le code de retour
+	 * @param code Le nouveau code
 	 */
-	private void loadGetFile(String resource)
+	public void setReturnCode(HTTPCode code)
 	{
-		resource = "./src/http/server/resource/" + (resource.equals("") ? DEFAULT_RESOURCE : resource);
-		
-		// on check si la ressource demandée existe
-		File resourceFile = new File(resource);
-		if (resourceFile.exists())
-		{
-			try
-			{
-				this.data = ResourceLoader.loadResource(resource);
-				this.returnCode = 200;
-				
-			} catch(IOException exception)
-			{
-				this.data = RESOURCE_LOADING_ERROR;
-				this.returnCode = 406;
-			}
-		} else
-		{
-			this.returnCode = 404;
-			this.data = DEFAULT_RESOURCE_ERROR;
-		}
+		this.returnCode = code;
+	}
+	
+	/**
+	 * Mets à jour le body
+	 * @param body Le nouveau body de la réponse
+	 */
+	public void setBody(String body)
+	{
+		this.body = body;
+	}
+	
+	/**
+	 * Mets à jour le content-type de la réponse
+	 * @param contentType Le nouveau content type
+	 */
+	public void setContentType(String contentType)
+	{
+		this.contentType = contentType;
+	}
+	
+	/**
+	 * Mets à jour le contentLength
+	 * @param length La nouvelle taille
+	 */
+	public void setContentLength(int length)
+	{
+		this.contentLength = length;
 	}
 	
 	@Override
@@ -95,16 +105,21 @@ public class HTTPResponse {
 		StringBuilder builder = new StringBuilder();
 		
 		// headers
-		builder.append(String.format("HTTP/1.0 %s OK\n", this.returnCode));
+		builder.append(String.format("%s %s OK\n", this.httpVersion, this.returnCode.code));
 		// A revoir
-		builder.append("Content-Type: text/html \n");
+		builder.append(String.format("Content-Type: %s \n", this.contentType));
 		builder.append("Server: Bot\n");
 		
+		if (HTTPProtocol.hasResponseBody(this.protocol))
+		{
+			builder.append(String.format("Content-Length: %s\n", this.contentLength));
+		}
+		
 		// ligne vide pour indiquer la fin des headers
-		builder.append("\n");
+		builder.append("\r\n");
 		
 		// contenu
-		builder.append(this.data);
+		builder.append(this.body);
 		
 		return builder.toString();
 	}

@@ -1,17 +1,19 @@
 package http.server;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.nio.file.Files;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import java.util.List;
 import java.util.ArrayList;
+
+import java.util.regex.Pattern;
 
 /**
  * Classe représentant le traitement d'une requete HTTP
@@ -47,82 +49,75 @@ public class HTTPThread extends Thread {
 			// blank line signals the end of the client HTTP
 			// headers.
 			String str = ".";
-			
-			String boundaryHeader = "boundary=";
-			String boundaryValue = null;
-			boolean inHeaders = true;
-			int cptLine = 0;
 			HTTPProtocol protocol = null;
-			boolean loop = true;
-			List<String> payload = new ArrayList<>();
+			List<String> rawHeaders = new ArrayList<>();
+			StringBuilder bodyBuilder = new StringBuilder();
+			int contentLength = Integer.MIN_VALUE;
 	
-			while (loop)
+			// recuperation du protocol
+			String protocolLine = in.readLine();
+			
+			if (protocolLine == null)
+			{
+				return;
+			}
+			
+			protocol = HTTPProtocol.valueOf(protocolLine.split(" ")[0]);
+			
+			// lecture des headers
+			while (true)
 			{
 				str = in.readLine();
 				if (str != null)
 				{
-					payload.add(str);
-					if(cptLine == 0) {
-						String[] firstLine = str.split(" ");
-						protocol = HTTPProtocol.valueOf(firstLine[0]);
-					}
-					
-					if (!inHeaders)
-					{
-						if(str.endsWith(boundaryValue+"--"))
-						{
-							break;
-						}
-					}
-					
 					if (str.equals(""))
-					{		
-						inHeaders = false;
-					}
-					if (str.contains(boundaryHeader))
 					{
-						int index = str.indexOf(boundaryHeader);
-						boundaryValue = str.substring(index + boundaryHeader.length() + 1);
+						break;
+					} else if (str.startsWith("Content-Length"))
+					{
+						// recuperation de la taille du body
+						int index = str.indexOf(":");
+						contentLength = Integer.parseInt(str.substring(index + 1).trim());
 					}
+					
+					rawHeaders.add(str);
 				}
-				cptLine++;
-				if(protocol != null && HTTPProtocol.hasBody(protocol))
-				{
-					loop = str != null;
-				}
-				else
-				{
-					loop = str != null && !str.equals("");
-				}
+			}
+			
+			// lecture du body
+			char[] buffer = new char[contentLength];
+			try
+			{
+				int readBytes = in.read(buffer, 0, contentLength);
+				String rawBody = new String(buffer);
+				bodyBuilder.append(rawBody);
+			} catch(IOException e)
+			{
+				System.err.println(e);
 			}
 			
 			
 			//Traitement de la requête
-			if (!payload.isEmpty())
-			{
-				System.out.println(payload);
-				
+			if (!rawHeaders.isEmpty())
+			{	
 				// construction de la requete
 				HTTPRequest request;
+				Map<String, String> headers = new HashMap<>();
 				Map<String, String> params = new HashMap<>();
-				
-				String firstLine = payload.get(0);
 				int index;
 				
 				// e.g POST / HTTP/1.1
 				// Recuperation de la ressource
-				String[] elements = firstLine.split(" ");
+				String[] elements = protocolLine.split(" ");
 				
 				String resource = elements[1].substring(1);
 				String httpVersion = elements[2];
 				
-				//Prise en compte des paramètres
+				//Prise en compte des paramètres de l'url
 				if(resource.contains("?"))
 				{
 					index = resource.indexOf("?");
-					
 					String paramList = resource.substring(index + 1);
-					
 					resource = resource.substring(0,index);
 					
 					for (String param : paramList.split("&")) {
@@ -130,34 +125,21 @@ public class HTTPThread extends Thread {
 						params.put(parameter[0], parameter[1]);
 					}
 				}
-	
-				//Paramètres du body
-				String paramLineBeginWith = "name=\"";
-				for (String element : payload) {
-					if(element.startsWith(paramLineBeginWith)) {
-						
-						String key;
-						String value;
-						
-						String param = "";
-						param = element.substring(paramLineBeginWith.length());
-						
-						int indexEndKey = param.indexOf("\"");
-						key = param.substring(0, indexEndKey);
-						
-						int indexEndValue = param.indexOf("---" + boundaryValue);
-						
-						value = param.substring(indexEndKey+1, indexEndValue); 
-						
-						params.put(key, value);
+				
+				System.out.println(resource);
+				
+				// gestion des headers
+				for (String rawHeader : rawHeaders) {
+					if(Pattern.matches("([\\w-]+):(.*?)(?=\\s*\\w+:|$)", rawHeader))
+					{
+						elements = rawHeader.split(": ", 2);
+						String headerKey = elements[0];
+						String headerValue = elements[1];
+						headers.put(headerKey,  headerValue);
 					}
-				}
+				}	
 				
-				for (Entry<String, String> param : params.entrySet()) {
-					System.out.println(param.getKey() + " : " + param.getValue());
-				}			
-				
-				request = new HTTPRequest(protocol, resource, httpVersion, params);
+				request = new HTTPRequest(protocol, resource, httpVersion, bodyBuilder.toString(), params, headers);
 				
 				HTTPResponse response = new HTTPResponse(request);
 				// Appel de la bonne méthode
@@ -221,6 +203,28 @@ public class HTTPThread extends Thread {
 	private void handleGET(HTTPRequest request, HTTPResponse response, PrintWriter out)
 	{
 		System.out.println("Receive GET Request");
+		String resource = request.getResource();
+		
+		// on check si la ressource demandée existe
+		File resourceFile = new File(resource);
+		if (resourceFile.exists())
+		{
+			try
+			{
+				String body = Resource.loadResource(resource);
+				response.setBody(body);
+				response.setReturnCode(HTTPCode.SUCCESS);
+				String contentType = Files.probeContentType(resourceFile.toPath());
+				response.setContentType(contentType);
+			} catch(IOException exception)
+			{
+				response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
+			}
+		} else
+		{
+			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
+		}
+		
 		out.println(response);
 		out.flush();
 	}
@@ -234,6 +238,24 @@ public class HTTPThread extends Thread {
 	private void handlePOST(HTTPRequest request, HTTPResponse response, PrintWriter out)
 	{
 		System.out.println("Receive POST Request");
+		String resource = request.getResource();
+		String body = "";
+		
+		try
+		{
+			Resource.appendData(resource, request.getBody());
+			body = "{\"success\": \"true\"}";
+			response.setBody(body);
+			response.setReturnCode(HTTPCode.SUCCESS);
+			response.setContentType("application/json");
+		} catch(IOException exception)
+		{
+			response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
+			response.setBody("{\"success\": \"false\"}");
+		}
+		
+		response.setContentLength(body.length());
+		
 		out.println(response);
 		out.flush();
 	}
@@ -247,6 +269,25 @@ public class HTTPThread extends Thread {
 	private void handleDELETE(HTTPRequest request, HTTPResponse response, PrintWriter out)
 	{
 		System.out.println("Receive DELETE Request");
+		String resource = request.getResource();
+		String body = "";
+		
+		try
+		{
+			Resource.deleteFile(resource);
+			body = "{\"success\": \"true\"}";
+			response.setBody(body);
+			response.setReturnCode(HTTPCode.SUCCESS);
+			response.setContentType("application/json");
+			response.setContentLength(body.length());
+		} catch(IOException exception)
+		{
+			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
+			response.setBody(body);
+		}
+		
+		response.setContentLength(body.length());
+		
 		out.println(response);
 		out.flush();
 	}
@@ -260,6 +301,30 @@ public class HTTPThread extends Thread {
 	private void handleHEAD(HTTPRequest request, HTTPResponse response, PrintWriter out)
 	{
 		System.out.println("Receive HEAD Request");
+		String resource = request.getResource();
+		String body = "";
+		
+		// on check si la ressource demandée existe
+		File resourceFile = new File(resource);
+		if (resourceFile.exists())
+		{
+			try
+			{
+				body = Resource.loadResource(resource);
+				response.setReturnCode(HTTPCode.SUCCESS);
+				String contentType = Files.probeContentType(resourceFile.toPath());
+				response.setContentType(contentType);
+			} catch(IOException exception)
+			{
+				response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
+			}
+		} else
+		{
+			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
+		}
+		
+		response.setContentLength(body.length());
+		
 		out.println(response);
 		out.flush();
 	}
@@ -273,6 +338,24 @@ public class HTTPThread extends Thread {
 	private void handlePUT(HTTPRequest request, HTTPResponse response, PrintWriter out)
 	{
 		System.out.println("Receive PUT Request");
+		String resource = request.getResource();
+		String body = "";
+		
+		try
+		{
+			Resource.replaceData(resource, request.getBody());
+			body = "{\"success\": \"true\"}";
+			response.setBody(body);
+			response.setReturnCode(HTTPCode.SUCCESS);
+			response.setContentType("application/json");
+		} catch(IOException exception)
+		{
+			response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
+			response.setBody("{\"success\": \"false\"}");
+		}
+		
+		response.setContentLength(body.length());
+		
 		out.println(response);
 		out.flush();
 	}
