@@ -226,6 +226,11 @@ public class HTTPThread extends Thread {
 			String header =  "";
 			String params = "";
 			String body = request.body;
+			if (body.isEmpty())
+			{
+				body = "null";
+			}
+			
 			String protocol = request.getProtocol().toString();
 			
 			// header
@@ -235,15 +240,21 @@ public class HTTPThread extends Thread {
 				header += "/n";
 			}
 			
+			// params
 			for (Map.Entry<String, String> entry : request.urlParams.entrySet())
 			{
 				params += (entry.getKey() + "=" + entry.getValue());
 			}
 			
+			if (params.isEmpty())
+			{
+				params = "null";
+			}
+			
 			try 
 			{
 				String[] cmd = new String[] {
-						"python3",
+						"python",
 						resource,
 						header,
 						params,
@@ -262,7 +273,7 @@ public class HTTPThread extends Thread {
 				String s;
 				
 				 while ((s = stdInput.readLine()) != null) {
-					 builder.append(s);
+					 builder.append(s + "\n");
 		         }
 				 
 				 String returnBody = builder.toString();
