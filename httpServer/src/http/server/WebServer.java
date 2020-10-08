@@ -24,6 +24,7 @@ public class WebServer {
 	
 	/**
 	 * WebServer constructor.
+	 * @param port Le port d'écoute
 	 */
 	public WebServer(int port)
 	{

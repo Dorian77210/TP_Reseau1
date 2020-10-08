@@ -2,24 +2,22 @@ package http.server;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.nio.file.Files;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStream;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
-
-import java.util.List;
+import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
  * Classe représentant le traitement d'une requete HTTP
- * @author Dorian
- *
+ * @author Dorian et Fanny
+ * @version 1.0
  */
 public class HTTPThread extends Thread {
 	
@@ -56,7 +54,7 @@ public class HTTPThread extends Thread {
 			int contentLength = Integer.MIN_VALUE;
 			boolean isDynamicResource = false;
 	
-			// recuperation du protocol
+			// Récuperation du protocole
 			String protocolLine = in.readLine();
 			
 			if (protocolLine == null)
@@ -66,7 +64,7 @@ public class HTTPThread extends Thread {
 			
 			protocol = HTTPProtocol.valueOf(protocolLine.split(" ")[0]);
 			
-			// lecture des headers
+			// Lecture des headers
 			while (true)
 			{
 				str = in.readLine();
@@ -77,7 +75,7 @@ public class HTTPThread extends Thread {
 						break;
 					} else if (str.startsWith("Content-Length"))
 					{
-						// recuperation de la taille du body
+						// Récuperation de la taille du body
 						int index = str.indexOf(":");
 						contentLength = Integer.parseInt(str.substring(index + 1).trim());
 					}
@@ -86,13 +84,13 @@ public class HTTPThread extends Thread {
 				}
 			}
 			
-			// lecture du body
+			// Lecture du body
 			if (contentLength != Integer.MIN_VALUE)
 			{
 				char[] buffer = new char[contentLength];
 				try
 				{
-					int readBytes = in.read(buffer, 0, contentLength);
+					in.read(buffer, 0, contentLength);
 					String rawBody = new String(buffer);
 					bodyBuilder.append(rawBody);
 				} catch(IOException e)
@@ -104,21 +102,21 @@ public class HTTPThread extends Thread {
 			//Traitement de la requête
 			if (!rawHeaders.isEmpty())
 			{	
-				// construction de la requete
+				// construction de la requête
 				HTTPRequest request;
 				Map<String, String> headers = new HashMap<>();
 				Map<String, String> params = new HashMap<>();
 				int index;
 				
 				// e.g POST / HTTP/1.1
-				// Recuperation de la ressource
+				// Récuperation de la ressource
 				String[] elements = protocolLine.split(" ");
 				
 				String resource = elements[1].substring(1);
 				isDynamicResource = resource.startsWith("dynamic/");
 				String httpVersion = elements[2];
 				
-				//Prise en compte des paramètres de l'url
+				// Prise en compte des paramètres de l'url
 				if(resource.contains("?"))
 				{
 					index = resource.indexOf("?");
@@ -133,7 +131,7 @@ public class HTTPThread extends Thread {
 				
 				System.out.println(resource);
 				
-				// gestion des headers
+				// Gestion des headers
 				for (String rawHeader : rawHeaders) {
 					if(Pattern.matches("([\\w-]+):(.*?)(?=\\s*\\w+:|$)", rawHeader))
 					{
@@ -145,7 +143,7 @@ public class HTTPThread extends Thread {
 				}	
 				
 				request = new HTTPRequest(protocol, resource, httpVersion, bodyBuilder.toString(), params, headers);
-				HTTPResponse response = new HTTPResponse(request);
+				HTTPResponse response = new HTTPResponse(httpVersion);
 				
 				
 				if (isDynamicResource)
@@ -153,7 +151,7 @@ public class HTTPThread extends Thread {
 				 	this.executeResource(request, response, out);
 				} else
 				{
-					// Appel de la bonne méthode
+					// Appel de la bonne méthode selon le protocole
 					if (protocol.equals(HTTPProtocol.GET))
 					{
 						this.handleGET(request, response, out);
@@ -207,9 +205,9 @@ public class HTTPThread extends Thread {
 	}
 	
 	/**
-	 * Permets d'executer une ressource
-	 * @param request La requete
-	 * @param response La reponse associée à la requete
+	 * Permet d'executer une ressource
+	 * @param request La requête
+	 * @param response La reponse associée à la requête
 	 * @param out Le flux de sortie
 	 */
 	private void executeResource(HTTPRequest request, HTTPResponse response, OutputStream out)
@@ -218,11 +216,11 @@ public class HTTPThread extends Thread {
 		String resource = request.getResource();
 		StringBuilder builder = new StringBuilder();
 		
-		// on check si la ressource demandée existe
+		// On vérifie que la ressource existe
 		File resourceFile = new File(resource);
 		if (resourceFile.exists())
 		{
-			// creation des arguments
+			// Creation des arguments
 			String header =  "";
 			String params = "";
 			String body = request.body;
@@ -233,14 +231,14 @@ public class HTTPThread extends Thread {
 			
 			String protocol = request.getProtocol().toString();
 			
-			// header
+			// Création du Header
 			for (Map.Entry<String, String> entry : request.headers.entrySet())
 			{
 				header += (entry.getKey() + ": " + entry.getValue());
 				header += "/n";
 			}
 			
-			// params
+			// Création des paramètres
 			for (Map.Entry<String, String> entry : request.urlParams.entrySet())
 			{
 				params += (entry.getKey() + "=" + entry.getValue());
@@ -278,8 +276,8 @@ public class HTTPThread extends Thread {
 				 
 				 String returnBody = builder.toString();
 				 System.out.println("Body : " + returnBody);
-				 response.setContentType("text/plain");
-				 response.setContentLength(returnBody.length());
+				 response.putHeader("Content-Type", "text/plain");
+				 response.putHeader("Content-Length", Integer.toString(returnBody.length()));
 				 response.setReturnCode(HTTPCode.SUCCESS);
 				 
 			} catch(IOException exception)
@@ -311,7 +309,7 @@ public class HTTPThread extends Thread {
 		System.out.println("Receive GET Request");
 		String resource = request.getResource();
 		
-		// on check si la ressource demandée existe
+		// On vérifie que la ressource existe
 		File resourceFile = new File(resource);
 		byte[] data = null;
 		
@@ -322,7 +320,7 @@ public class HTTPThread extends Thread {
 				data = Resource.loadResource(resource);
 				response.setReturnCode(HTTPCode.SUCCESS);
 				String contentType = Files.probeContentType(resourceFile.toPath());
-				response.setContentType(contentType);
+				response.putHeader("Content-Type", contentType);
 			} catch(IOException exception)
 			{
 				response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
@@ -358,14 +356,14 @@ public class HTTPThread extends Thread {
 			Resource.appendData(resource, request.getBody());
 			data = "{\"success\": \"true\"}".getBytes();
 			response.setReturnCode(HTTPCode.SUCCESS);
-			response.setContentType("application/json");
+			response.putHeader("Content-Type", "application/json");
 		} catch(IOException exception)
 		{
 			response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
 			data = "{\"success\": \"false\"}".getBytes();
 		}
 		
-		response.setContentLength(data.length);
+		response.putHeader("Content-Length", Integer.toString(data.length));
 		
 		try
 		{
@@ -393,8 +391,8 @@ public class HTTPThread extends Thread {
 			Resource.deleteFile(resource);
 			data = "{\"success\": \"true\"}".getBytes();
 			response.setReturnCode(HTTPCode.SUCCESS);
-			response.setContentType("application/json");
-			response.setContentLength(data.length);
+			response.putHeader("Content-Type", "application/json");
+			response.putHeader("Content-Length", Integer.toString(data.length));
 		} catch(IOException exception)
 		{
 			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
@@ -421,7 +419,7 @@ public class HTTPThread extends Thread {
 		String resource = request.getResource();
 		byte[] data = null;
 		
-		// on check si la ressource demandée existe
+		// On vérifie que la ressource existe
 		File resourceFile = new File(resource);
 		if (resourceFile.exists())
 		{
@@ -430,7 +428,7 @@ public class HTTPThread extends Thread {
 				data = Resource.loadResource(resource);
 				response.setReturnCode(HTTPCode.SUCCESS);
 				String contentType = Files.probeContentType(resourceFile.toPath());
-				response.setContentType(contentType);
+				response.putHeader("Content-Type", contentType);
 			} catch(IOException exception)
 			{
 				response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
@@ -440,7 +438,8 @@ public class HTTPThread extends Thread {
 			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
 		}
 		
-		response.setContentLength(data.length);
+		int length = data !=null ? data.length:0;
+		response.putHeader("Content-Length", Integer.toString(length));
 		
 		try
 		{
@@ -468,14 +467,14 @@ public class HTTPThread extends Thread {
 			Resource.replaceData(resource, request.getBody());
 			data = "{\"success\": \"true\"}".getBytes();
 			response.setReturnCode(HTTPCode.SUCCESS);
-			response.setContentType("application/json");
+			response.putHeader("Content-Type", "application/json");
 		} catch(IOException exception)
 		{
 			response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
 			data = "{\"success\": \"false\"}".getBytes();
 		}
 		
-		response.setContentLength(data.length);
+		response.putHeader("Content-Length", Integer.toString(data.length));
 		
 		try
 		{
@@ -495,10 +494,11 @@ public class HTTPThread extends Thread {
 	private void handlePATCH(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive PATCH Request");
+
 	}
 	
 	/**
-	 * Permet de recevoir une requete patch
+	 * Permet de recevoir une requete connect
 	 * @param request La requete associée
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
@@ -510,7 +510,7 @@ public class HTTPThread extends Thread {
 
 	
 	/**
-	 * Permet de recevoir une requete patch
+	 * Permet de recevoir une requete options
 	 * @param request La requete associée
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie
@@ -518,10 +518,37 @@ public class HTTPThread extends Thread {
 	private void handleOPTIONS(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive OPTIONS Request");
+
+		StringBuilder protocols = new StringBuilder();
+		for (int i = 0; i<HTTPProtocol.values().length; ++i)
+		{
+			
+			if(i < HTTPProtocol.values().length-1) {
+				protocols.append(HTTPProtocol.values()[i] + ", ");
+			}
+			else
+			{
+				protocols.append(HTTPProtocol.values()[i]);
+			}
+		}
+		response.putHeader("Allow", protocols.toString());
+		
+		Date date = new Date();
+		response.putHeader("Date", date.toString());
+		response.setReturnCode(HTTPCode.SUCCESS);
+
+		try
+		{
+			response.send(out, null);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
+
 	}
 
 	/**
-	 * Permet de recevoir une requete patch
+	 * Permet de recevoir une requete trace
 	 * @param request La requete associée
 	 * @param response La reponse associée
 	 * @param out Le flux de sortie

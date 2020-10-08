@@ -1,88 +1,60 @@
 package http.server;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Classe représentant la réponse d'une requête HTTP
- * @author doria
- *
+ * Classe représentant la réponse d'une requête HTTP (Version HTTP, Code de retour, Headers)
+ * @author Dorian et Fanny
+ * @version 1.0
  */
 public class HTTPResponse {
 
-	/**
-	 * Code de retour pour la reponse
-	 */
-	HTTPCode returnCode;
-	
 	/**
 	 * Version HTTP associée à la reponse
 	 */
 	private String httpVersion;
 	
 	/**
-	 * Le type de la reponse
+	 * Code de retour pour la reponse
 	 */
-	private String contentType;
-	
+	private HTTPCode returnCode;
+		
 	/**
-	 * Taille du body 
+	 * L'entête de la réponse (variant pour chaque protocole)
 	 */
-	private int contentLength;
+	private Map<String, String> headers;
 	
-	/**
-	 * Protocole utilisée par la réponse 
-	 */
-	private HTTPProtocol protocol;
-	
-	/**
-	 * Erreur par défaut renvoyée au client si la ressource demandée n'existe pas
-	 */
-	private static final String DEFAULT_RESOURCE_ERROR = "La ressource demandée n'existe pas";
-	
-	/**
-	 * Erreur renvoyée si une ressource n'a pas été chargée correctement
-	 */
-	private static final String RESOURCE_LOADING_ERROR = "La ressource demandée n'a pas pu être chargée correctement";
 	
 	/**
 	 * Constructeur de la classe HTTPResponse
-	 * @param request La requête qui initie la réponse
+	 * @param HTTPVersion La version de l'HTTP
 	 */
-	public HTTPResponse(HTTPRequest request)
+	public HTTPResponse(String HTTPVersion)
 	{
-		this.httpVersion = request.getHTTPVersion();
-		this.contentType = "";
-		this.protocol = request.getProtocol();
-		this.contentLength = 0;
+		this.httpVersion = HTTPVersion;
+		headers = new HashMap<String, String>();
+	}
+	
+	/**
+	 * Permet d'ajouter un header à la réponse
+	 * @param key Le nom du header
+	 * @param value La valeur du header
+	 */
+	public void putHeader(String key, String value)
+	{
+		this.headers.put(key, value);
 	}
 	
 	/**
 	 * Met à jour le code de retour
-	 * @param code Le nouveau code
+	 * @param code Le code de retour
 	 */
 	public void setReturnCode(HTTPCode code)
 	{
 		this.returnCode = code;
-	}
-	
-	/**
-	 * Mets à jour le content-type de la réponse
-	 * @param contentType Le nouveau content type
-	 */
-	public void setContentType(String contentType)
-	{
-		this.contentType = contentType;
-	}
-	
-	/**
-	 * Mets à jour le contentLength
-	 * @param length La nouvelle taille
-	 */
-	public void setContentLength(int length)
-	{
-		this.contentLength = length;
 	}
 	
 	/**
@@ -96,17 +68,17 @@ public class HTTPResponse {
 		StringBuilder builder = new StringBuilder();
 		
 		// headers
-		builder.append(String.format("%s %s OK\n", this.httpVersion, this.returnCode.code));
-		builder.append(String.format("Content-Type: %s \n", this.contentType));
+		builder.append(String.format("%s %s %s\n", this.httpVersion, this.returnCode.code, this.returnCode.reasonPhrase));
 		builder.append("Server: Bot\n");
 		
-		if (HTTPProtocol.hasResponseBody(this.protocol))
-		{
-			builder.append(String.format("Content-Length: %s\n", this.contentLength));
+		for (Map.Entry<String, String> entry : this.headers.entrySet()) {
+			builder.append(String.format("%s: %s\n", entry.getKey(), entry.getValue()));
 		}
 		
 		// ligne vide pour indiquer la fin des headers
 		builder.append("\r\n");
+		
+		System.out.println(builder.toString());
 		
 		// contenu
 		out.write(builder.toString().getBytes());

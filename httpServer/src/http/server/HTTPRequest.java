@@ -1,11 +1,12 @@
 package http.server;
 
-import java.io.File;
-import java.io.IOException;
-
 import java.util.Map;
-import java.util.HashMap;
 
+/**
+ * Classe décrivant une requête HTTP (Protocole - Ressource - HTTPVersion, Headers, Paramètres, Body)
+ * @author Dorian et Fanny
+ * @version 1.0
+ */
 public class HTTPRequest {
 	
 	/**
@@ -19,16 +20,6 @@ public class HTTPRequest {
 	private String resource;
 	
 	/**
-	 * Body de la requête
-	 */
-	public final String body;
-	
-	/**
-	 * Parametres de l'url
-	 */
-	public final Map<String, String> urlParams;
-	
-	/**
 	 * La version HTTP associée à le requête
 	 */
 	private String httpVersion;
@@ -38,6 +29,17 @@ public class HTTPRequest {
 	 */
 	public final Map<String, String> headers;
 	
+	/**
+	 * Parametres de l'url
+	 */
+	public final Map<String, String> urlParams;
+	
+	/**
+	 * Body de la requête
+	 */
+	public final String body;
+	
+
 	/**
 	 * Constructeur de la classe HTTPProtocol
 	 * @param protocol Le protocole de la requete
