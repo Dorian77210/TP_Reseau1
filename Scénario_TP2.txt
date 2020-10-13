@@ -112,3 +112,10 @@ Headers = Accept: */*/nUser-Agent: PostmanRuntime/7.26.5/nConnection: keep-alive
  parameters = Key=Value
  protocol = GET
  body = null↵↵
+
+
+Scénarios pour les codes de retour :
+- Envoie d'une méthode GET avec une url trop longue (plus de 60 char) : Retourne une erreur 414
+- Test de la méthode PATCH : Retourne une erreur 501
+- Test de création d'un fichier en POST : Retourne le code 201
+- Test de récupération du fichier too_large.txt : Retourne le code 413 (?)

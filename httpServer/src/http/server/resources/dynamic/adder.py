@@ -16,4 +16,5 @@ for element in elements:
 j = {
 	'result': result
 };
+
 print("{}".format(json.dumps(j, separators=(',', ':'))));

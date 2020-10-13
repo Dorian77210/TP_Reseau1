@@ -26,3 +26,7 @@
 2- Tuer 1 client de manière brusque. Vérifier le message de départ sur l'autre client
 
 3- Tuer le serveur.
+
+
+
+Multicast

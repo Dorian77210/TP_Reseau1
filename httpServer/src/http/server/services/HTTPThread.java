@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,7 +32,15 @@ public class HTTPThread extends Thread {
 	 */
 	private Socket socket;
 	
+	/**
+	 * Taille limite d'une URL
+	 */
 	private static final int URL_LIMIT = 60;
+	
+	/**
+	 * Taille limite d'un fichier
+	 */
+	private static final int MAX_FILE_SIZE = 10_000_000;
 	
 	/**
 	 * Constructeur de la classe HTTPTread
@@ -121,7 +130,7 @@ public class HTTPThread extends Thread {
 				
 				String resource = elements[1].substring(1);
 				isDynamicResource = resource.startsWith("dynamic/");
-				String httpVersion = elements[2];
+				String httpVersion = elements[2].trim();
 				
 				// Prise en compte des paramètres de l'url
 				if(resource.contains("?"))
@@ -153,7 +162,10 @@ public class HTTPThread extends Thread {
 				HTTPResponse response = new HTTPResponse(httpVersion);
 				
 				if(resource.length() > URL_LIMIT) {
-					this.handleTooLongURL(request, response, out);
+					this.handleError(response, HTTPCode.URL_TOO_LONG, out);
+				} else if (!httpVersion.equals("HTTP/1.1") && !httpVersion.equals("HTTP/1.0"))
+				{
+					this.handleError(response, HTTPCode.HTTP_VERSION_NOT_SUPPORTED, out);
 				}
 				else
 				{
@@ -230,81 +242,85 @@ public class HTTPThread extends Thread {
 		
 		// On vérifie que la ressource existe
 		File resourceFile = new File(resource);
-		if (resourceFile.exists())
+		
+		System.out.println("Ressource = " + resource);
+		
+		if (!resource.endsWith(".py"))
 		{
-			// Creation des arguments
-			String header =  "";
-			String params = "";
-			String body = request.body;
-			if (body.isEmpty())
-			{
-				body = "null";
-			}
-			
-			String protocol = request.getProtocol().toString();
-			
-			// Création du Header
-			for (Map.Entry<String, String> entry : request.headers.entrySet())
-			{
-				header += (entry.getKey() + ": " + entry.getValue());
-				header += "/n";
-			}
-			
-			// Création des paramètres
-			int i = 0;
-			for (Map.Entry<String, String> entry : request.urlParams.entrySet())
-			{
-				params += (entry.getKey() + "=" + entry.getValue());
-				if (i != request.urlParams.size() - 1)
-				{
-					params += "\n";
-				}
-				i++;
-			}
-			
-			if (params.isEmpty())
-			{
-				params = "null";
-			}
-			
-			try 
-			{
-				String[] cmd = new String[] {
-						"python",
-						resource,
-						header,
-						params,
-						protocol,
-						body
-				};
-				
-				System.out.println(resource);
-				
-				Process p = Runtime.getRuntime().exec(cmd);
-				
-				BufferedReader stdInput = new BufferedReader(new 
-		                 InputStreamReader(p.getInputStream()));
-				
-				builder = new StringBuilder();
-				String s;
-				
-				 while ((s = stdInput.readLine()) != null) {
-					 builder.append(s + "\n");
-		         }
-				 
-				 String returnBody = builder.toString();
-				 System.out.println("Body : " + returnBody);
-				 response.putHeader("Content-Type", "text/plain");
-				 response.putHeader("Content-Length", Integer.toString(returnBody.length()));
-				 response.setReturnCode(HTTPCode.SUCCESS);
-				 
-			} catch(IOException exception)
-			{
-				System.err.println(exception);
-			}
+			response.setReturnCode(HTTPCode.BAD_REQUEST);
 		} else
 		{
-			response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
+			if (resourceFile.exists())
+			{
+				// Creation des arguments
+				String header =  "";
+				String params = "";
+				String body = request.body;
+				if (body.isEmpty())
+				{
+					body = "null";
+				}
+				
+				String protocol = request.getProtocol().toString();
+				
+				// Création du Header
+				for (Map.Entry<String, String> entry : request.headers.entrySet())
+				{
+					header += (entry.getKey() + ": " + entry.getValue());
+					header += "/n";
+				}
+				
+				// Création des paramètres
+				int i = 0;
+				for (Map.Entry<String, String> entry : request.urlParams.entrySet())
+				{
+					params += (entry.getKey() + "=" + entry.getValue());
+					if (i != request.urlParams.size() - 1)
+					{
+						params += "\n";
+					}
+					i++;
+				}
+				
+				if (params.isEmpty())
+				{
+					params = "null";
+				}
+				
+				try 
+				{
+					String[] cmd = new String[] {
+							"python",
+							resource,
+							header,
+							params,
+							protocol,
+							body
+					};
+					
+					Process p = Runtime.getRuntime().exec(cmd);
+					
+					BufferedReader stdInput = new BufferedReader(new 
+			                 InputStreamReader(p.getInputStream()));
+					String s;
+					
+					 while ((s = stdInput.readLine()) != null) {
+						 builder.append(s + "\n");
+			         }
+					 
+					 String returnBody = builder.toString();
+					 System.out.println(builder);
+					 response.putHeader("Content-Type", "text/plain");
+					 response.putHeader("Content-Length", Integer.toString(returnBody.length()));
+					 response.setReturnCode(HTTPCode.SUCCESS);
+				} catch(IOException exception)
+				{
+					System.err.println(exception);
+				}
+			} else
+			{
+				response.setReturnCode(HTTPCode.RESOURCE_NOT_FOUND);
+			}
 		}
 		
 		try
@@ -333,15 +349,26 @@ public class HTTPThread extends Thread {
 		
 		if (resourceFile.exists())
 		{
-			try
+			if (resourceFile.length() > MAX_FILE_SIZE)
 			{
-				data = Resource.loadResource(resource);
-				response.setReturnCode(HTTPCode.SUCCESS);
-				String contentType = Files.probeContentType(resourceFile.toPath());
-				response.putHeader("Content-Type", contentType);
-			} catch(IOException exception)
+				response.setReturnCode(HTTPCode.REQUEST_ENTITY_TOO_LARGE);
+			} else
 			{
-				response.setReturnCode(HTTPCode.INTERNAL_SERVER_ERROR);
+				try
+				{
+					
+					data = Resource.loadResource(resource);
+					String contentType = Files.probeContentType(resourceFile.toPath());
+					response.setReturnCode(HTTPCode.SUCCESS);
+					response.putHeader("Content-Type", contentType);
+				} catch(IOException exception)
+				{
+					HTTPCode code;
+					code = exception instanceof AccessDeniedException
+								? HTTPCode.FORBIDDEN
+								: HTTPCode.INTERNAL_SERVER_ERROR;
+					response.setReturnCode(code);
+				}	
 			}
 		} else
 		{
@@ -369,11 +396,19 @@ public class HTTPThread extends Thread {
 		String resource = request.getResource();
 		byte[] data = null;
 		
+		File file = new File(request.getResource());
+		if (!file.exists())
+		{
+			response.setReturnCode(HTTPCode.CREATED);
+		} else
+		{
+			response.setReturnCode(HTTPCode.SUCCESS);
+		}
+		
 		try
 		{
 			Resource.appendData(resource, request.getBody());
 			data = "{\"success\": \"true\"}".getBytes();
-			response.setReturnCode(HTTPCode.SUCCESS);
 			response.putHeader("Content-Type", "application/json");
 		} catch(IOException exception)
 		{
@@ -480,11 +515,19 @@ public class HTTPThread extends Thread {
 		String resource = request.getResource();
 		byte[] data = null;
 		
+		File file = new File(request.getResource());
+		if (!file.exists())
+		{
+			response.setReturnCode(HTTPCode.CREATED);
+		} else
+		{
+			response.setReturnCode(HTTPCode.SUCCESS);
+		}
+		
 		try
 		{
 			Resource.replaceData(resource, request.getBody());
 			data = "{\"success\": \"true\"}".getBytes();
-			response.setReturnCode(HTTPCode.SUCCESS);
 			response.putHeader("Content-Type", "application/json");
 		} catch(IOException exception)
 		{
@@ -605,12 +648,17 @@ public class HTTPThread extends Thread {
 		}
 	}
 	
-	
-	private void handleTooLongURL(HTTPRequest request, HTTPResponse response, OutputStream out)
+	/**
+	 * Permet de retourner une erreur
+	 * @param response La réponse qui est envoyée au client
+	 * @param code Le code associé à l'erreur
+	 * @ 
+	 */
+	private void handleError(HTTPResponse response, HTTPCode code, OutputStream out)
 	{
 		System.out.println("Receive too long url request");
 		
-		response.setReturnCode(HTTPCode.URL_TOO_LONG);
+		response.setReturnCode(code);
 		
 		try
 		{
