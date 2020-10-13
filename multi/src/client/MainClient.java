@@ -10,16 +10,16 @@ import common.Message;
 import common.NetworkProtocol;
 
 /**
- * Point d'entrée du client
- * @author dorian
+ * Classe de connexion du client au serveur et d'envoi de message vers le serveur. 
+ * @author Dorian et Fanny
  *
  */
 
 public class MainClient {
 	
 	/**
-	 * Main method
-	 * @param args
+	 * Permet de se connecter au serveur puis d'y envoyer des messages
+	 * @param args IP et numéro de port du serveur
 	 */
 	public static void main(String[] args)
 	{

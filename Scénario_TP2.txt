@@ -1,0 +1,114 @@
+1- Envoi d'une méthode GET : http://localhost:3000/sample.html sans paramètre.
+
+HTTP/1.1 200 OK
+Server: Bot
+Content-Type: text/html
+
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>Test</title>
+	</head>
+
+	<body>
+		Hello world
+	</body>
+
+</html>
+
+2- Envoi d'une méthode HEAD : http://localhost:3000/sample.html sans paramètre.
+
+HTTP/1.1 200 OK
+Server: Bot
+Content-Length: 108
+Content-Type: text/html
+
+
+3- Envoi d'une méthode GET : http://localhost:3000/titi.html sans paramètre. -> Fichier inexistant
+
+HTTP/1.1 404 Not Found
+Server: Bot
+
+4- Envoi d'une méthode GET : http://localhost:3000/jacuzzi.png sans paramètre. -> Image
+
+HTTP/1.1 200 OK
+Server: Bot
+Content-Type: image/png
+
+L'image en question
+
+5- Envoi d'une méthode POST : http://localhost:3000/index.html sans paramètre. -> Le body de la requête a été ajouter au fichier.
+
+HTTP/1.1 200 OK
+Server: Bot
+Content-Length: 19
+Content-Type: application/json
+
+{
+    "success": "true"
+}
+
+6- Envoi d'une méthode POST : http://localhost:3000/titi.html sans paramètre. -> Création d'un fichier contenant le body.
+
+HTTP/1.1 200 OK
+Server: Bot
+Content-Length: 19
+Content-Type: application/json
+
+{
+    "success": "true"
+}
+
+7- Envoi d'une méthode PUT : http://localhost:3000/titi.html sans paramètre. -> Remplacement du contenu par le body.
+
+HTTP/1.1 200 OK
+Server: Bot
+Content-Length: 19
+Content-Type: application/json
+
+{
+    "success": "true"
+}
+
+8- Envoi d'une méthode DELETE : http://localhost:3000/titi.html sans paramètre. -> Suppression du fichier titi.html.
+
+HTTP/1.1 200 OK
+Server: Bot
+Content-Length: 19
+Content-Type: application/json
+
+{
+    "success": "true"
+}
+
+9- Envoi d'une méthode PUT : http://localhost:3000/titi.html sans paramètre. -> Création d'un fichier contenant le body.
+
+HTTP/1.1 200 OK
+Server: Bot
+Content-Length: 19
+Content-Type: application/json
+
+{
+    "success": "true"
+}
+
+10- Envoi d'une méthode OPTIONS : http://localhost:3000/ sans paramètres.
+
+HTTP/1.1 200 OK
+Server: Bot
+Date: Sat Oct 10 17:25:37 CEST 2020
+Allow: GET, POST, DELETE, PUT, HEAD, PATCH, OPTIONS, TRACE, CONNECT
+
+
+11- Envoi d'une méthode GET : http://localhost:3000/dynamic/main.py avec comme paramètre : key=value
+
+HTTP/1.1 200 OK
+Server: Bot
+Content-Length: 248
+Content-Type: text/plain
+
+Headers = Accept: */*/nUser-Agent: PostmanRuntime/7.26.5/nConnection: keep-alive/nPostman-Token: 1b3f5ac3-801d-40b1-a45e-e76019eb42bd/nHost: localhost:3000/nAccept-Encoding: gzip, deflate, br/n
+ parameters = Key=Value
+ protocol = GET
+ body = null↵↵

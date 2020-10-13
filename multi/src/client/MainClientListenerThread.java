@@ -6,6 +6,11 @@ import java.net.Socket;
 
 import common.Message;
 
+/**
+ * Classe représentant le thread qui écoute sur la socket
+ * @author Dorian et Fanny
+ *
+ */
 public class MainClientListenerThread extends Thread 
 {
 	/**

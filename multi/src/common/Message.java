@@ -7,8 +7,8 @@ import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * Classe qui représente un message entre le serveur et les client
- * @author dorian
+ * Classe qui représente un message transitant entre le serveur et les clients
+ * @author Dorian et Fanny
  *
  */
 public class Message implements Serializable {
@@ -40,7 +40,7 @@ public class Message implements Serializable {
 	 * Constructeur par défault de la classe Message
 	 */
 	public Message() {
-		this.protocol = NetworkProtocol.UNDEFINED;
+		this.protocol = null;
 	}
 	
 	/**

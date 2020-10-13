@@ -3,11 +3,15 @@ package server;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
-import java.net.SocketException;
 
 import common.Message;
 import common.NetworkProtocol;
 
+/**
+ * Classe représentant le thread dédié au client qui écoute sur la socket de communication
+ * @author Dorian et Fanny
+ *
+ */
 public class ClientThread
 	extends Thread {
 	
@@ -71,6 +75,8 @@ public class ClientThread
 				}
 				
 				GlobalBuffer.getInstance().addExpiredSocket(this.socket);
+				GlobalBuffer.getInstance().addMessage(new Message("Un utilisateur a quitté le chat", NetworkProtocol.LEAVE));
+				
 				break;
 			}
 		}

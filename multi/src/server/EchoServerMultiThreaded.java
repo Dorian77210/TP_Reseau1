@@ -3,11 +3,16 @@ package server;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+/**
+ * Classe d'écoute de nouveau client
+ * @author Dorian et Fanny
+ *
+ */
 public class EchoServerMultiThreaded  {
 	
 	/**
-	 * Main method
-	 * @param args
+	 * Permet de créer une socket de communication par client
+	 * @param args Numéro de port sur lequel le serveur sera joignable
 	 */
        public static void main(String args[]){ 
         ServerSocket listenSocket;

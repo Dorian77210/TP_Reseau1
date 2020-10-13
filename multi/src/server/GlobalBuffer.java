@@ -12,7 +12,7 @@ import java.net.Socket;
 
 /**
  * Singleton permettant de stocker des données essentielles pour la communication entre clients
- * @author doria
+ * @author Fanny et Dorian
  *
  */
 public class GlobalBuffer {
@@ -57,7 +57,7 @@ public class GlobalBuffer {
 	}
 	
 	/**
-	 * Permets de vider la file de messages petit à petit
+	 * Permet de récupérer le message le plus ancien et de le retirer de la file
 	 * @return Le premier message de la file si elle n'est pas vide, sinon <code>null</code>
 	 */
 	public synchronized Message nextMessage()
@@ -66,7 +66,7 @@ public class GlobalBuffer {
 	}
 	
 	/**
-	 * Permets de vider la file de nouvelles sockets en attente
+	 * Permet de récupérer la nouvelle socket la plus ancienne et de la retirer de la file
 	 * @return La première socket de la file si elle n'est pas valide, sinon <code>null</code>
 	 */
 	public synchronized Socket nextSocket()
@@ -75,7 +75,7 @@ public class GlobalBuffer {
 	}
 	
 	/**
-	 * Ajoute un nouveau message dans la file de messages
+	 * Ajoute un message dans la file des nouveaux messages
 	 * @param message Le nouveau message à ajouter
 	 */
 	public synchronized void addMessage(Message message)
@@ -83,13 +83,17 @@ public class GlobalBuffer {
 		this.messages.add(message);
 	}
 	
+	/**
+	 * Ajoute une socket dans la file des nouvelles sockets de communication
+	 * @param socket La socket à ajouter
+	 */
 	public synchronized void addSocket(Socket socket)
 	{
 		this.newSockets.add(socket);
 	}
 	
 	/**
-	 * Permets de récupérer la liste des sockets expirées
+	 * Permet de récupérer la liste des sockets expirées
 	 * @return La liste des sockets expirées
 	 */
 	public synchronized List<Socket> getExpiredSockets()
@@ -98,7 +102,7 @@ public class GlobalBuffer {
 	}
 	
 	/**
-	 * Permet d'ajouter une socket expirée
+	 * Ajoute une socket dans la file des sockets expirées
 	 * @param socket La socket à ajouter
 	 */
 	public synchronized void addExpiredSocket(Socket socket)

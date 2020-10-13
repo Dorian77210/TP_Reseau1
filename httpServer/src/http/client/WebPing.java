@@ -3,7 +3,16 @@ package http.client;
 import java.net.InetAddress;
 import java.net.Socket;
 
+/**
+ * Classe permettant de tester une connexion d'un client au serveur HTTP
+ * @author Dorian et Fanny
+ * @version 1.0
+ */
 public class WebPing {
+	/**
+	 * Start the application.
+	 * @param args IP et numéro de port du serveur HTTP
+	 */
 	public static void main(String[] args) {
 
 		if (args.length != 2) {

@@ -16,8 +16,8 @@ import common.Message;
 import common.NetworkProtocol;
 
 /**
- * Classe représentant le thread permettant de gérer les envoies de messages aux clients
- * @author dorian
+ * Classe représentant le thread permettant de gérer les envois de messages aux clients
+ * @author Dorian et Fanny
  *
  */
 public class ClientManagerThread extends Thread {
@@ -81,7 +81,9 @@ public class ClientManagerThread extends Thread {
 			Message message;
 			while((message = GlobalBuffer.getInstance().nextMessage()) != null)
 			{
-				this.history.add(message);
+				if(message.getProtocol() != NetworkProtocol.LEAVE) {
+					this.history.add(message);
+				}
 				this.send(message);
 			}
 			
