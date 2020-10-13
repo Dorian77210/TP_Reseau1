@@ -62,7 +62,7 @@ public class HTTPRequest {
 		this.urlParams = urlParams;
 		this.httpVersion = httpVersion;
 		this.headers = headers;
-		this.resource = "./src/http/server/resource/" + (resource.equals("") ? "index.html" : resource);
+		this.resource = "./src/http/server/resources/" + (resource.equals("") ? "index.html" : resource);
 	}
 	
 	

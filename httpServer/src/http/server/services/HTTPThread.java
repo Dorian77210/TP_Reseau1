@@ -31,6 +31,8 @@ public class HTTPThread extends Thread {
 	 */
 	private Socket socket;
 	
+	private static final int URL_LIMIT = 60;
+	
 	/**
 	 * Constructeur de la classe HTTPTread
 	 * @param socket La socket associée au thread	
@@ -150,48 +152,53 @@ public class HTTPThread extends Thread {
 				request = new HTTPRequest(protocol, resource, httpVersion, bodyBuilder.toString(), params, headers);
 				HTTPResponse response = new HTTPResponse(httpVersion);
 				
-				
-				if (isDynamicResource)
+				if(resource.length() > URL_LIMIT) {
+					this.handleTooLongURL(request, response, out);
+				}
+				else
 				{
-				 	this.executeResource(request, response, out);
-				} else
-				{
-					// Appel de la bonne méthode selon le protocole
-					if (protocol.equals(HTTPProtocol.GET))
+					if (isDynamicResource)
 					{
-						this.handleGET(request, response, out);
-					} else if (protocol.equals(HTTPProtocol.POST))
-					{
-						this.handlePOST(request, response, out);
+					 	this.executeResource(request, response, out);
+					} else
+					{					
+						// Appel de la bonne méthode selon le protocole
+						if (protocol.equals(HTTPProtocol.GET))
+						{
+							this.handleGET(request, response, out);
+						} else if (protocol.equals(HTTPProtocol.POST))
+						{
+							this.handlePOST(request, response, out);
+						}
+						else if (protocol.equals(HTTPProtocol.DELETE))
+						{
+							this.handleDELETE(request, response, out);
+						}
+						else if (protocol.equals(HTTPProtocol.PUT))
+						{
+							this.handlePUT(request, response, out);
+						}
+						else if (protocol.equals(HTTPProtocol.PATCH))
+						{
+							this.handlePATCH(request, response, out);
+						}
+						else if (protocol.equals(HTTPProtocol.HEAD))
+						{
+							this.handleHEAD(request, response, out);
+						}
+						else if (protocol.equals(HTTPProtocol.CONNECT))
+						{
+							this.handleCONNECT(request, response, out);
+						}
+						else if (protocol.equals(HTTPProtocol.OPTIONS))
+						{
+							this.handleOPTIONS(request, response, out);
+						}
+						else if (protocol.equals(HTTPProtocol.TRACE))
+						{
+							this.handleTRACE(request, response, out);
+						}	
 					}
-					else if (protocol.equals(HTTPProtocol.DELETE))
-					{
-						this.handleDELETE(request, response, out);
-					}
-					else if (protocol.equals(HTTPProtocol.PUT))
-					{
-						this.handlePUT(request, response, out);
-					}
-					else if (protocol.equals(HTTPProtocol.PATCH))
-					{
-						this.handlePATCH(request, response, out);
-					}
-					else if (protocol.equals(HTTPProtocol.HEAD))
-					{
-						this.handleHEAD(request, response, out);
-					}
-					else if (protocol.equals(HTTPProtocol.CONNECT))
-					{
-						this.handleCONNECT(request, response, out);
-					}
-					else if (protocol.equals(HTTPProtocol.OPTIONS))
-					{
-						this.handleOPTIONS(request, response, out);
-					}
-					else if (protocol.equals(HTTPProtocol.TRACE))
-					{
-						this.handleTRACE(request, response, out);
-					}	
 				}
 			}	
 		} catch(IOException exception)
@@ -208,7 +215,7 @@ public class HTTPThread extends Thread {
 			}
 		}
 	}
-	
+
 	/**
 	 * Permet d'executer une ressource
 	 * @param request La requête
@@ -244,9 +251,15 @@ public class HTTPThread extends Thread {
 			}
 			
 			// Création des paramètres
+			int i = 0;
 			for (Map.Entry<String, String> entry : request.urlParams.entrySet())
 			{
 				params += (entry.getKey() + "=" + entry.getValue());
+				if (i != request.urlParams.size() - 1)
+				{
+					params += "\n";
+				}
+				i++;
 			}
 			
 			if (params.isEmpty())
@@ -499,7 +512,16 @@ public class HTTPThread extends Thread {
 	private void handlePATCH(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive PATCH Request");
-
+		
+		response.setReturnCode(HTTPCode.NOT_IMPLEMENTED);
+		
+		try
+		{
+			response.send(out, null);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
 	}
 	
 	/**
@@ -511,6 +533,16 @@ public class HTTPThread extends Thread {
 	private void handleCONNECT(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive CONNECT Request");
+		
+		response.setReturnCode(HTTPCode.NOT_IMPLEMENTED);
+		
+		try
+		{
+			response.send(out, null);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
 	}
 
 	
@@ -561,5 +593,31 @@ public class HTTPThread extends Thread {
 	private void handleTRACE(HTTPRequest request, HTTPResponse response, OutputStream out)
 	{
 		System.out.println("Receive TRACE Request");
+		
+		response.setReturnCode(HTTPCode.NOT_IMPLEMENTED);
+		
+		try
+		{
+			response.send(out, null);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
+	}
+	
+	
+	private void handleTooLongURL(HTTPRequest request, HTTPResponse response, OutputStream out)
+	{
+		System.out.println("Receive too long url request");
+		
+		response.setReturnCode(HTTPCode.URL_TOO_LONG);
+		
+		try
+		{
+			response.send(out, null);
+		} catch(IOException e)
+		{
+			System.err.println(e);
+		}
 	}
 }

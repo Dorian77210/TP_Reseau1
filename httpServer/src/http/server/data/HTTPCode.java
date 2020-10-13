@@ -17,7 +17,23 @@ public enum HTTPCode {
 	/**
 	 * 
 	 */
-	INTERNAL_SERVER_ERROR(500, "Internal server error");
+	INTERNAL_SERVER_ERROR(500, "Internal server error"),
+	/**
+	 * 
+	 */
+	CREATED(201, "Created"),
+	/**
+	 * 
+	 */
+	FORBIDDEN(403, "Forbidden"),
+	/**
+	 * 
+	 */
+	URL_TOO_LONG(414, "URI Too Long"),
+	/**
+	 * 
+	 */
+	NOT_IMPLEMENTED(501, "Not Implemented");
 	
 	/**
 	 * Code retour pour une requête qui n'a pas pu être traitée par le serveur.
